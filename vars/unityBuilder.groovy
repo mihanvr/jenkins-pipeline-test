@@ -14,10 +14,7 @@ def build(def options) {
 
     echo "unityHubPath: ${unityHubPath}"
     echo "options.unityHubPath: ${options.unityHubPath}"
-    echo "env: ${env}"
-    echo "{options.env}: ${options.env}"
-    echo "options.env?.UNITY_HUB_PATH: ${options.env?.UNITY_HUB_PATH}"
-    echo "options.env.UNITY_HUB_PATH: ${options.env.UNITY_HUB_PATH}"
+    echo "env?.UNITY_HUB_PATH: ${env?.UNITY_HUB_PATH}"
 
     def locationPathName = getLocationPathName(options)
 
@@ -121,6 +118,10 @@ def getLocationPathName(def options) {
     def env = options?.env ?: options?.script?.env
     def buildOutputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
     def buildTarget = options.buildTarget ?: env?.BUILD_TARGET
+
+    echo "buildOutputPath: ${buildOutputPath}"
+    echo "buildTarget: ${buildTarget}"
+
     switch (buildTarget.toLowerCase()) {
         case 'standalonewindows64':
         case 'standalonelinux64':
