@@ -33,26 +33,16 @@ def post(options) {
         def xApiKey = options.xApiKey ?: env?.X_API_KEY
         if (xApiKey) {
             customHeaders.add([name: 'X-API-KEY', value: xApiKey])
-        }
-        def webhookCredentials = options.webhookCredentials ?: env?.WEBHOOK_CREDENTIALS
-        withCredentials([string(credentialsId: 'webhook_mi8820', variable: 'ddd')]) {
-            echo "ddd: ${ddd}"
-            echo "ddd.length(): ${ddd?.length()}"
-        }
-        if (webhookCredentials) {
-            echo webhookCredentials
-            withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKey2')]) {
-                customHeaders.add([name: 'X-API-KEY', value: "${xApiKey2}"])
-                def l = xApiKey2?.length()
-                echo "xApiKey is null ? ${xApiKey2 == null}"
-                echo "xApiKey: ${xApiKey2}"
-                echo "xApiKey len: ${l}"
-                echo "xApiKey callName: ${xApiKey2?.class?.simpleName}"
+        } else {
+            def webhookCredentials = options.webhookCredentials ?: env?.WEBHOOK_CREDENTIALS
+            if (webhookCredentials) {
+                echo webhookCredentials
+                withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKeyCred')]) {
+                    customHeaders.add([name: 'X-API-KEY', value: "${xApiKeyCred}"])
+                }
             }
         }
-        echo "httpRequest success call"
-
-//        httpRequest consoleLogResponseBody: true, contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, customHeaders: customHeaders, validResponseCodes: '100:599'
+        httpRequest consoleLogResponseBody: true, contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, customHeaders: customHeaders, validResponseCodes: '100:599'
     }
 }
 
