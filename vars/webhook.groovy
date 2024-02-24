@@ -1,10 +1,10 @@
 
 def post(options) {
-    def currentBuild = options.currentBuild
+    def currentBuild = options.currentBuild ?: options.script?.currentBuild
     def changeLog = getChangeLogFromLatestSuccess(currentBuild)
     def buildArtifacts = currentBuild.rawBuild.artifacts
     def artifacts = []
-    def env = options.env ?: options?.script?.env
+    def env = options.env ?: options.script?.env
     for (int i = 0; i < buildArtifacts.size(); i++) {
         file = buildArtifacts[i]
         artifacts.add([size: file.fileSize, name: file.fileName, href: "${env.BUILD_URL}artifact/${file.fileName}"])

@@ -75,12 +75,9 @@ def build(def options) {
 
 def processArtifacts(def options) {
     def env = options?.env ?: options?.script?.env
-    echo "buildTag1: ${options['buildTag']}"
     def buildTag = options.buildTag ?: env?.BUILD_TAG
-    echo "buildTag2: ${buildTag}"
     def outputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
     def buildTarget = options.buildTarget ?: env?.BUILD_TARGET
-    echo "buildTarget: ${buildTarget}"
     switch (buildTarget.toLowerCase()) {
         case 'standalonewindows64':
         case 'standalonelinux64':
