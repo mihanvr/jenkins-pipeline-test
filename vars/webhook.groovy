@@ -40,9 +40,9 @@ def post(options) {
             echo webhookCredentials
             withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKey')]) {
                 echo "step 2"
-//                customHeaders.add([name: 'X-API-KEY', value: xApiKey])
+                customHeaders.add([name: 'X-API-KEY', value: "${xApiKey}"])
                 echo "step 3"
-                echo xApiKey
+                echo "xApiKey: ${xApiKey}"
             }
             echo "step 4"
         }
