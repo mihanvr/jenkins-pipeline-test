@@ -117,7 +117,7 @@ def getLocationPathName(def options) {
     switch (buildTarget.toLowerCase()) {
         case 'standalonewindows64':
         case 'standalonelinux64':
-            def executableName = options.executableName ?: 'app'
+            def executableName = options.executableName ?: env?.EXECUTABLE_NAME ?: 'app'
             def ext = buildTarget == 'StandaloneWindows64' ? '.exe' : ''
             return "${buildOutputPath}/${executableName}${ext}" case 'webgl':
             return buildOutputPath
