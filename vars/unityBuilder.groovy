@@ -78,7 +78,7 @@ def build(def options) {
 def processArtifacts(def options) {
     def env = options?.env ?: options?.script?.env
     def buildTag = options.buildTag ?: env?.BUILD_TAG
-    def outputPath = options.outputPath ?: env?.OUTPUT_PATH
+    def outputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
     def buildTarget = options.buildTarget ?: env?.BUILD_TARGET
     switch (buildTarget.toLowerCase()) {
         case 'standalonewindows64':
@@ -95,6 +95,7 @@ def processArtifacts(def options) {
 
 }
 
+@NonCPS
 def getProjectUnityVersionAndRevision(String projectDir) {
     final def expectedLineStart = 'm_EditorVersionWithRevision: '
     def projectVersionPath = "${projectDir}/ProjectSettings/ProjectVersion.txt"
@@ -110,6 +111,7 @@ def getProjectUnityVersionAndRevision(String projectDir) {
     return ['', '']
 }
 
+@NonCPS
 def getLocationPathName(def options) {
     def buildOutputPath = options.buildOutputPath
     def buildTarget = options.buildTarget
