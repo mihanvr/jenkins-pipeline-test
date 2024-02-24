@@ -35,15 +35,19 @@ def post(options) {
             customHeaders.add([name: 'X-API-KEY', value: xApiKey])
         }
         def webhookCredentials = options.webhookCredentials ?: env?.WEBHOOK_CREDENTIALS
+        withCredentials([string(credentialsId: 'webhook_mi8820', variable: 'ddd')]) {
+            echo "ddd: ${ddd}"
+            echo "ddd.length(): ${ddd?.length()}"
+        }
         if (webhookCredentials) {
             echo webhookCredentials
-            withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKey')]) {
-                customHeaders.add([name: 'X-API-KEY', value: "${xApiKey}"])
-                def l = xApiKey?.length()
-                echo "xApiKey is null ? ${xApiKey == null}"
-                echo "xApiKey: ${xApiKey}"
+            withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKey2')]) {
+                customHeaders.add([name: 'X-API-KEY', value: "${xApiKey2}"])
+                def l = xApiKey2?.length()
+                echo "xApiKey is null ? ${xApiKey2 == null}"
+                echo "xApiKey: ${xApiKey2}"
                 echo "xApiKey len: ${l}"
-                echo "xApiKey callName: ${xApiKey?.class?.simpleName}"
+                echo "xApiKey callName: ${xApiKey2?.class?.simpleName}"
             }
         }
         echo "httpRequest success call"
