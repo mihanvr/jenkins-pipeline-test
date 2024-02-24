@@ -1,16 +1,18 @@
+@NonCPS
 def build(def options) {
-    def autoDetectUnityVersion = (options.autoDetectUnityVersion ?: false).toBoolean()
-    def unityHubPath = options.unityHubPath
-    def projectDir = options.projectDir
+    def env = options?.env ?: options?.script?.env
+    def autoDetectUnityVersion = (options.autoDetectUnityVersion ?: env?.AUTO_DETECT_UNITY_VERSION ?: false).toBoolean()
+    def unityHubPath = options.unityHubPath ?: env?.UNITY_HUB_PATH
+    def projectDir = options.projectDir ?: env?.PROJECT_DIR ?: '.'
     def scenes = options.scenes
-    def buildTarget = options.buildTarget
-    def serverMode = (options.standalone?.serverMode ?: false).toBoolean()
+    def buildTarget = options.buildTarget ?: env?.BUILD_TARGET
+    def serverMode = (options.standalone?.serverMode ?: env?.SERVER_MODE ?: false).toBoolean()
     def additionalParameters = options.additionalParameters ?: ''
     def extraScriptingDefines = options.extraScriptingDefines
-    def preBuildMethod = options.preBuildMethod
-    def postBuildMethod = options.postBuildMethod
+    def preBuildMethod = options.preBuildMethod ?: env?.PRE_BUILD_METHOD
+    def postBuildMethod = options.postBuildMethod ?: env?.POST_BUILD_METHOD
+    def outputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
 
-    def outputPath = options.buildOutputPath
     def locationPathName = getLocationPathName(options)
 
     String unityVersion
@@ -20,8 +22,8 @@ def build(def options) {
         (unityVersion, unityRevision) = getProjectUnityVersionAndRevision(projectDir)
         log.info("required unityVersion: ${unityVersion} (${unityRevision})")
     } else {
-        unityVersion = options.unityVersion
-        unityRevision = options.unityRevision
+        unityVersion = options.unityVersion ?: env?.UNITY_VERSION
+        unityRevision = options.unityRevision ?: env?.UNITY_REVISION
     }
 
     unityHub.init(unityHubPath)
@@ -66,9 +68,31 @@ def build(def options) {
     additionalParameters += ' -ciOptionsFile ci_build_options.json'
     unity.execute(projectDir: projectDir, methodToExecute: 'JenkinsBuilder.Build', buildTarget: buildTarget, noGraphics: serverMode, additionalParameters: additionalParameters)
 
+    env.OUTPUT_PATH = outputPath
     return [
             outputPath: outputPath
     ]
+}
+
+@NonCPS
+def processArtifacts(def options) {
+    def env = options?.env ?: options?.script?.env
+    def buildTag = options.buildTag ?: env?.BUILD_TAG
+    def outputPath = options.outputPath ?: env?.OUTPUT_PATH
+    def buildTarget = options.buildTarget ?: env?.BUILD_TARGET
+    switch (buildTarget.toLowerCase()) {
+        case 'standalonewindows64':
+        case 'standalonelinux64':
+        case 'webgl':
+            def archiveFileName = "${buildTag}.zip"
+            zip zipFile: archiveFileName, dir: outputPath, overwrite: true, archive: true
+        case 'android':
+            archiveArtifacts artifacts: ''
+        default:
+            break
+    }
+
+
 }
 
 def getProjectUnityVersionAndRevision(String projectDir) {
@@ -87,9 +111,8 @@ def getProjectUnityVersionAndRevision(String projectDir) {
 }
 
 def getLocationPathName(def options) {
-    def buildTarget = options.buildTarget
     def buildOutputPath = options.buildOutputPath
-    String locationPathName
+    def buildTarget = options.buildTarget
     switch (buildTarget.toLowerCase()) {
         case 'standalonewindows64':
         case 'standalonelinux64':
@@ -100,8 +123,7 @@ def getLocationPathName(def options) {
             return buildOutputPath
         case 'android':
             def ext = options.buildAppBundle ? '.aab' : '.apk'
-            locationPathName = "${buildOutputPath}${ext}"
-            return locationPathName
+            return "${buildOutputPath}${ext}"
         default:
             error("buildTarget ${buildTarget} not supported")
             break
