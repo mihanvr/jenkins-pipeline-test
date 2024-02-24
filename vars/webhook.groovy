@@ -1,4 +1,4 @@
-@NonCPS
+
 def post(options) {
     def currentBuild = options.currentBuild
     def changeLog = getChangeLogFromLatestSuccess(currentBuild)
@@ -48,11 +48,12 @@ def post(options) {
             }
         }
 
-        httpRequest consoleLogResponseBody: true, contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, customHeaders: customHeaders, validResponseCodes: '100:599'
+        echo "httpRequest success call"
+
+//        httpRequest consoleLogResponseBody: true, contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, customHeaders: customHeaders, validResponseCodes: '100:599'
     }
 }
 
-@NonCPS
 def getChangeLogFromLatestSuccess(currentBuild) {
     def build = currentBuild
     def passedBuilds = []
@@ -64,7 +65,6 @@ def getChangeLogFromLatestSuccess(currentBuild) {
     return getChangeLog(passedBuilds)
 }
 
-@NonCPS
 def getChangeLog(passedBuilds) {
     def log = ""
     for (int x = 0; x < passedBuilds.size(); x++) {
