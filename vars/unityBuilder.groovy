@@ -16,7 +16,6 @@ def build(def options) {
     echo "step 1"
     withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKey')]) {
         echo "xApiKey null ? ${xApiKey == null}"
-        customHeaders.add([name: 'X-API-KEY', value: xApiKey])
         echo xApiKey
     }
     echo "step 2"
