@@ -1,6 +1,7 @@
 def post(options) {
     def changeLog = getChangeLogFromLatestSuccess(options)
-    def artifacts = getBuildArtifacts(options)
+    def artifacts = []
+//    def artifacts = getBuildArtifacts(options)
 
     def jsonBody = [
             result               : currentBuild.result,
