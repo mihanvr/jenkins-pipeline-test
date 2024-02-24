@@ -77,6 +77,7 @@ def build(def options) {
 @NonCPS
 def processArtifacts(def options) {
     def env = options?.env ?: options?.script?.env
+    echo "buildTag: ${options['buildTag']}"
     def buildTag = options.buildTag ?: env?.BUILD_TAG
     def outputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
     def buildTarget = options.buildTarget ?: env?.BUILD_TARGET
