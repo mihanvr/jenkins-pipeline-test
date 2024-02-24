@@ -84,9 +84,11 @@ def processArtifacts(def options) {
         case 'webgl':
             def archiveFileName = "${buildTag}.zip"
             zip zipFile: archiveFileName, dir: outputPath, overwrite: true, archive: true
+            break
         case 'android':
             def filePath = getLocationPathName(options)
             archiveArtifacts artifacts: filePath
+            break
         default:
             break
     }
