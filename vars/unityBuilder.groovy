@@ -114,9 +114,6 @@ def getLocationPathName(def options) {
     def buildOutputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
     def buildTarget = options.buildTarget ?: env?.BUILD_TARGET
 
-    echo "buildOutputPath: ${buildOutputPath}"
-    echo "buildTarget: ${buildTarget}"
-
     switch (buildTarget.toLowerCase()) {
         case 'standalonewindows64':
         case 'standalonelinux64':
