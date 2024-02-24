@@ -1,3 +1,4 @@
+@NonCPS
 def post(options) {
     def currentBuild = options.currentBuild ?: options.script?.currentBuild
     def changeLog = getChangeLogFromLatestSuccess(currentBuild)
@@ -43,6 +44,7 @@ def post(options) {
         def webhookCredentials = options.webhookCredentials ?: env?.WEBHOOK_CREDENTIALS
         if (webhookCredentials) {
             echo "step 1"
+            echo webhookCredentials
             withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKey')]) {
                 echo "step 2"
                 customHeaders.add([name: 'X-API-KEY', value: xApiKey])
@@ -59,6 +61,7 @@ def post(options) {
     }
 }
 
+@NonCPS
 def getChangeLogFromLatestSuccess(currentBuild) {
     def build = currentBuild
     def passedBuilds = []
@@ -70,6 +73,7 @@ def getChangeLogFromLatestSuccess(currentBuild) {
     return getChangeLog(passedBuilds)
 }
 
+@NonCPS
 def getChangeLog(passedBuilds) {
     def log = ""
     for (int x = 0; x < passedBuilds.size(); x++) {
