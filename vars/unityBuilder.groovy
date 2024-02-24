@@ -1,4 +1,3 @@
-@NonCPS
 def build(def options) {
     def env = options?.env ?: options?.script?.env
     def autoDetectUnityVersion = (options.autoDetectUnityVersion ?: env?.AUTO_DETECT_UNITY_VERSION ?: false).toBoolean()
@@ -74,7 +73,6 @@ def build(def options) {
     ]
 }
 
-@NonCPS
 def processArtifacts(def options) {
     def env = options?.env ?: options?.script?.env
     echo "buildTag: ${options['buildTag']}"
@@ -112,10 +110,10 @@ def getProjectUnityVersionAndRevision(String projectDir) {
     return ['', '']
 }
 
-@NonCPS
 def getLocationPathName(def options) {
-    def buildOutputPath = options.buildOutputPath
-    def buildTarget = options.buildTarget
+    def env = options?.env ?: options?.script?.env
+    def buildOutputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
+    def buildTarget = options.buildTarget ?: env?.BUILD_TARGET
     switch (buildTarget.toLowerCase()) {
         case 'standalonewindows64':
         case 'standalonelinux64':
