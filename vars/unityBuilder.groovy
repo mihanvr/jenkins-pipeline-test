@@ -12,14 +12,12 @@ def build(def options) {
     def postBuildMethod = options.postBuildMethod ?: env?.POST_BUILD_METHOD
     def outputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
 
-    echo "unityHubPath: ${unityHubPath}"
-    echo "options.unityHubPath: ${options.unityHubPath}"
-    echo "env?.UNITY_HUB_PATH: ${env?.UNITY_HUB_PATH}"
-
     def locationPathName = getLocationPathName(options)
 
     String unityVersion
     String unityRevision
+
+    echo "step 1"
 
     if (autoDetectUnityVersion) {
         (unityVersion, unityRevision) = getProjectUnityVersionAndRevision(projectDir)
@@ -29,9 +27,14 @@ def build(def options) {
         unityRevision = options.unityRevision ?: env?.UNITY_REVISION
     }
 
+    echo "step 2"
+
     unityHub.init(unityHubPath)
+    echo "step 3"
     def unityPath = unityHub.getUnityPath(unityVersion, unityRevision, false)
+    echo "step 4"
     unity.init(unityPath)
+    echo "step 5"
 
     def buildOptions = [:]
 
@@ -60,10 +63,12 @@ def build(def options) {
     if (options.webgl){
         buildOptions.webgl = options.webgl
     }
+    echo "step 6"
 
     dir('Assets/Editor') {
         writeFile file: 'JenkinsBuilder.cs', text: libraryResource('JenkinsBuilder.cs')
     }
+    echo "step 7"
     writeJSON file: 'ci_build_options.json', json: buildOptions
     echo 'ci_build_options.json'
     echo writeJSON(json: buildOptions, returnText: true)
