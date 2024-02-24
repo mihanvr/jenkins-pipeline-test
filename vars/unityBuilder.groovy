@@ -10,7 +10,8 @@ def build(def options) {
     def preBuildMethod = options.preBuildMethod
     def postBuildMethod = options.postBuildMethod
 
-    def (outputPath, locationPathName) = getOutputPathAndLocationPathName(options)
+    def outputPath = options.buildOutputPath
+    def locationPathName = getLocationPathName(options)
 
     String unityVersion
     String unityRevision
@@ -85,25 +86,22 @@ def getProjectUnityVersionAndRevision(String projectDir) {
     return ['', '']
 }
 
-def getOutputPathAndLocationPathName(def options) {
+def getLocationPathName(def options) {
     def buildTarget = options.buildTarget
-    def buildName = options.buildName
-    def outputDir = "Build/${buildName}"
+    def buildOutputPath = options.buildOutputPath
     String locationPathName
     switch (buildTarget.toLowerCase()) {
         case 'standalonewindows64':
         case 'standalonelinux64':
-            def standalone = options.standalone
-            def executableName = standalone?.executableName ?: 'app'
+            def executableName = opions.executableName ?: 'app'
             def ext = buildTarget == 'StandaloneWindows64' ? '.exe' : ''
-            return [outputDir, "${outputDir}/${executableName}${ext}"]
+            return "${buildOutputPath}/${executableName}${ext}"
         case 'webgl':
-            return [outputDir, outputDir]
+            return buildOutputPath
         case 'android':
-            def android = options.android
-            def ext = android?.buildAppBundle ? '.aab' : '.apk'
-            locationPathName = "${outputDir}${ext}"
-            return [locationPathName, locationPathName]
+            def ext = options.buildAppBundle ? '.aab' : '.apk'
+            locationPathName = "${buildOutputPath}${ext}"
+            return locationPathName
         default:
             error("buildTarget ${buildTarget} not supported")
             break
