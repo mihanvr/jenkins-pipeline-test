@@ -18,6 +18,8 @@ def build(def options) {
     String unityRevision
 
     echo "step 1"
+    echo "autoDetectUnityVersion: ${autoDetectUnityVersion}"
+    echo "projectDir: ${projectDir}"
 
     if (autoDetectUnityVersion) {
         (unityVersion, unityRevision) = getProjectUnityVersionAndRevision(projectDir)
@@ -103,7 +105,6 @@ def processArtifacts(def options) {
 
 }
 
-@NonCPS
 def getProjectUnityVersionAndRevision(String projectDir) {
     final def expectedLineStart = 'm_EditorVersionWithRevision: '
     def projectVersionPath = "${projectDir}/ProjectSettings/ProjectVersion.txt"
