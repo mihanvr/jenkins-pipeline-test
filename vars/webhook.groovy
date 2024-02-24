@@ -39,8 +39,11 @@ def post(options) {
             echo webhookCredentials
             withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKey')]) {
                 customHeaders.add([name: 'X-API-KEY', value: "${xApiKey}"])
+                def l = xApiKey?.length()
+                echo "xApiKey is null ? ${xApiKey == null}"
                 echo "xApiKey: ${xApiKey}"
-                echo "xApiKey len: ${xApiKey.length()}"
+                echo "xApiKey len: ${l}"
+                echo "xApiKey callName: ${xApiKey?.class?.simpleName}"
             }
         }
         echo "httpRequest success call"
