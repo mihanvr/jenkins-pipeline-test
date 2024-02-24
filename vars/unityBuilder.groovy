@@ -12,7 +12,12 @@ def build(def options) {
     def postBuildMethod = options.postBuildMethod ?: env?.POST_BUILD_METHOD
     def outputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
 
-    echo "unityHubPath1: ${unityHubPath}, unityHubPath2: ${env?.UNITY_HUB_PATH}"
+    echo "unityHubPath: ${unityHubPath}"
+    echo "options.unityHubPath: ${options.unityHubPath}"
+    echo "env: ${env}"
+    echo "{options.env}: ${options.env}"
+    echo "options.env?.UNITY_HUB_PATH: ${options.env?.UNITY_HUB_PATH}"
+    echo "options.env.UNITY_HUB_PATH: ${options.env.UNITY_HUB_PATH}"
 
     def locationPathName = getLocationPathName(options)
 
