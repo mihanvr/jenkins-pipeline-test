@@ -17,10 +17,6 @@ def build(def options) {
     String unityVersion
     String unityRevision
 
-    echo "step 1"
-    echo "autoDetectUnityVersion: ${autoDetectUnityVersion}"
-    echo "projectDir: ${projectDir}"
-
     if (autoDetectUnityVersion) {
         (unityVersion, unityRevision) = getProjectUnityVersionAndRevision(projectDir)
         log.info("required unityVersion: ${unityVersion} (${unityRevision})")
@@ -29,14 +25,9 @@ def build(def options) {
         unityRevision = options.unityRevision ?: env?.UNITY_REVISION
     }
 
-    echo "step 2"
-
     unityHub.init(unityHubPath)
-    echo "step 3"
     def unityPath = unityHub.getUnityPath(unityVersion, unityRevision, false)
-    echo "step 4"
     unity.init(unityPath)
-    echo "step 5"
 
     def buildOptions = [:]
 
@@ -65,12 +56,10 @@ def build(def options) {
     if (options.webgl){
         buildOptions.webgl = options.webgl
     }
-    echo "step 6"
 
     dir('Assets/Editor') {
         writeFile file: 'JenkinsBuilder.cs', text: libraryResource('JenkinsBuilder.cs')
     }
-    echo "step 7"
     writeJSON file: 'ci_build_options.json', json: buildOptions
     echo 'ci_build_options.json'
     echo writeJSON(json: buildOptions, returnText: true)
@@ -86,10 +75,12 @@ def build(def options) {
 
 def processArtifacts(def options) {
     def env = options?.env ?: options?.script?.env
-    echo "buildTag: ${options['buildTag']}"
+    echo "buildTag1: ${options['buildTag']}"
     def buildTag = options.buildTag ?: env?.BUILD_TAG
+    echo "buildTag2: ${buildTag}"
     def outputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
     def buildTarget = options.buildTarget ?: env?.BUILD_TARGET
+    echo "buildTarget: ${buildTarget}"
     switch (buildTarget.toLowerCase()) {
         case 'standalonewindows64':
         case 'standalonelinux64':
@@ -97,7 +88,8 @@ def processArtifacts(def options) {
             def archiveFileName = "${buildTag}.zip"
             zip zipFile: archiveFileName, dir: outputPath, overwrite: true, archive: true
         case 'android':
-            archiveArtifacts artifacts: ''
+            def filePath = getLocationPathName(options)
+            archiveArtifacts artifacts: filePath
         default:
             break
     }
@@ -137,7 +129,8 @@ def getLocationPathName(def options) {
             return buildOutputPath
         case 'android':
             def ext = options.buildAppBundle ? '.aab' : '.apk'
-            return "${buildOutputPath}${ext}"
+            def buildTag = options.buildTag ?: env?.BUILD_TAG
+            return "${buildOutputPath}/${buildTag}${ext}"
         default:
             error("buildTarget ${buildTarget} not supported")
             break
