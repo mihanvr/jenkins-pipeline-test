@@ -12,6 +12,8 @@ def build(def options) {
     def postBuildMethod = options.postBuildMethod ?: env?.POST_BUILD_METHOD
     def outputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
 
+    echo "unityHubPath1: ${unityHubPath}, unityHubPath2: ${env?.UNITY_HUB_PATH}"
+
     def locationPathName = getLocationPathName(options)
 
     String unityVersion
@@ -119,8 +121,7 @@ def getLocationPathName(def options) {
         case 'standalonelinux64':
             def executableName = options.executableName ?: 'app'
             def ext = buildTarget == 'StandaloneWindows64' ? '.exe' : ''
-            return "${buildOutputPath}/${executableName}${ext}"
-        case 'webgl':
+            return "${buildOutputPath}/${executableName}${ext}" case 'webgl':
             return buildOutputPath
         case 'android':
             def ext = options.buildAppBundle ? '.aab' : '.apk'
