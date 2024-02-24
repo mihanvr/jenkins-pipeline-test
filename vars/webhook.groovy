@@ -9,6 +9,9 @@ def post(options) {
         file = buildArtifacts[i]
         artifacts.add([size: file.fileSize, name: file.fileName, href: "${env.BUILD_URL}artifact/${file.fileName}"])
         echo "size: ${file.fileSize}, name: ${file.fileName}, href: \"${env.BUILD_URL}artifact/${file.fileName}\""
+        var a0 = artifacts[0]
+        echo "size: ${a0.size}, name: ${a0.name}, href: ${a0.href}"
+        echo "artifacts.size(): ${artifacts.size()}"
         echo writeJSON(returnText: true, json: [size: file.fileSize, name: file.fileName, href: "${env.BUILD_URL}artifact/${file.fileName}"])
         echo "next item"
     }
