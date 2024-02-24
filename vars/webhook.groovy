@@ -36,18 +36,13 @@ def post(options) {
         }
         def webhookCredentials = options.webhookCredentials ?: env?.WEBHOOK_CREDENTIALS
         if (webhookCredentials) {
-            echo "step 1"
             echo webhookCredentials
             withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKey')]) {
-                echo "step 2"
                 customHeaders.add([name: 'X-API-KEY', value: "${xApiKey}"])
-                echo "step 3"
                 echo "xApiKey: ${xApiKey}"
+                echo "xApiKey len: ${xApiKey.length()}"
             }
-            echo "step 4"
         }
-        echo "step 5"
-
         echo "httpRequest success call"
 
 //        httpRequest consoleLogResponseBody: true, contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, customHeaders: customHeaders, validResponseCodes: '100:599'
