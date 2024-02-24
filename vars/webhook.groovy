@@ -8,6 +8,9 @@ def post(options) {
     for (int i = 0; i < buildArtifacts.size(); i++) {
         file = buildArtifacts[i]
         artifacts.add([size: file.fileSize, name: file.fileName, href: "${env.BUILD_URL}artifact/${file.fileName}"])
+        echo "size: ${file.fileSize}, name: ${file.fileName}, href: \"${env.BUILD_URL}artifact/${file.fileName}\""
+        def item = [size: file.fileSize, name: file.fileName, href: "${env.BUILD_URL}artifact/${file.fileName}"]
+        echo item
     }
 
     def jsonBody = [
