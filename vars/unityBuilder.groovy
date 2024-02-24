@@ -12,14 +12,6 @@ def build(def options) {
     def postBuildMethod = options.postBuildMethod ?: env?.POST_BUILD_METHOD
     def outputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
 
-    def webhookCredentials = options.webhookCredentials ?: env?.WEBHOOK_CREDENTIALS
-    echo "step 1"
-    withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKey')]) {
-        echo "xApiKey null ? ${xApiKey == null}"
-        echo xApiKey
-    }
-    echo "step 2"
-
     def locationPathName = getLocationPathName(options)
 
     String unityVersion
