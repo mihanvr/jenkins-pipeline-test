@@ -1,4 +1,3 @@
-
 def post(options) {
     def currentBuild = options.currentBuild ?: options.script?.currentBuild
     def changeLog = getChangeLogFromLatestSuccess(currentBuild)
@@ -8,12 +7,6 @@ def post(options) {
     for (int i = 0; i < buildArtifacts.size(); i++) {
         file = buildArtifacts[i]
         artifacts.add([size: file.fileSize, name: file.fileName, href: "${env.BUILD_URL}artifact/${file.fileName}"])
-        echo "size: ${file.fileSize}, name: ${file.fileName}, href: \"${env.BUILD_URL}artifact/${file.fileName}\""
-        var a0 = artifacts[0]
-        echo "size: ${a0.size}, name: ${a0.name}, href: ${a0.href}"
-        echo "artifacts.size(): ${artifacts.size()}"
-        echo writeJSON(returnText: true, json: [size: file.fileSize, name: file.fileName, href: "${env.BUILD_URL}artifact/${file.fileName}"])
-        echo "next item"
     }
 
     def jsonBody = [
@@ -36,7 +29,7 @@ def post(options) {
             artifacts            : artifacts
     ]
     def json = writeJSON returnText: true, json: jsonBody
-    echo json
+    echo "Post body: ${json}"
 
     def webhookUrl = options.webhookUrl ?: env?.WEBHOOK_URL
 
@@ -49,10 +42,16 @@ def post(options) {
         }
         def webhookCredentials = options.webhookCredentials ?: env?.WEBHOOK_CREDENTIALS
         if (webhookCredentials) {
+            echo "step 1"
             withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKey')]) {
+                echo "step 2"
                 customHeaders.add([name: 'X-API-KEY', value: xApiKey])
+                echo "step 3"
+                echo xApiKey
             }
+            echo "step 4"
         }
+        echo "step 5"
 
         echo "httpRequest success call"
 
