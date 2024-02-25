@@ -3,18 +3,17 @@ def call(def script) {
 }
 
 def pipeline(def script) {
-    script.discordWebhookUrl = "https://discord.com/api/webhooks/1009734622650834994/RKxPLNbHgfO2JFQFY0CR7u2yCYgdzF71R-9JVt7h2L-LOxs83t77X5XY_wlYJqqz7Edl"
     try {
-        discordPush(script: script, buildStatus: "Queued")
+        notify(script: script, buildStatus: "Queued")
         defaultPipeline(script)
-        discordPush(script: script, buildStatus: "Success", fields: [])
+        notify(script: script, buildStatus: "Success", fields: [])
         postWebhook(script)
     } catch (Exception e) {
         try {
             if (e instanceof InterruptedException) {
-                discordPush(script: script, buildStatus: "Canceled")
+                notify(script: script, buildStatus: "Canceled")
             } else {
-                discordPush(script: script, content: e.toString(), buildStatus: "Failed")
+                notify(script: script, content: e.toString(), buildStatus: "Failed")
             }
         } catch (Exception e2) {
             echo e2.toString()
@@ -27,7 +26,7 @@ def defaultPipeline(def script) {
     def options = script.options
     def nodeLabel = options?.nodeLabel ?: options.env?.NODE_LABEL ?: "unity"
     node(nodeLabel) {
-        discordPush(script: script, buildStatus: "Started")
+        notify(script: script, buildStatus: "Started")
         this.options = options
         stage("Checkout") {
             def gitUrl = options?.gitUrl ?: env?.GIT_URL
@@ -148,15 +147,20 @@ def getChangeLog(def passedBuilds) {
     return log
 }
 
-def discordPush(def options) {
+def notify(def options) {
+    discordNotify(options)
+}
+
+def discordNotify(def options) {
     def notifyStages = options.script?.options?.notifyStages
     def script = options.script
     def env = script.env
     def buildStatus = options.buildStatus
+    def webhookUrl = options?.discordWebhookUrl ?: env?.DISCORD_WEBHOOK_URL
+    if (!webhookUrl) return
     if (notifyStages == null || !notifyStages.contains(buildStatus)) return
 
     node {
-        def webhookUrl = script?.discordWebhookUrl ?: env?.DISCORD_WEBHOOK_URL
         def buildUrl = env?.BUILD_URL
         def jobUrl = env?.JOB_URL
         def jobName = options.script?.env?.JOB_NAME
