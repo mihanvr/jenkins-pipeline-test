@@ -4,10 +4,10 @@ def call(def options) {
 
 def pipeline(def options) {
     try {
-        discordPush(discordUrl = "https://discord.com/api/webhooks/1009734622650834994/RKxPLNbHgfO2JFQFY0CR7u2yCYgdzF71R-9JVt7h2L-LOxs83t77X5XY_wlYJqqz7Edl", message: [embeds: [[color = 3506169, fields = [[name: "1", value: "2", inline: true]]]]])
+        discordPush(discordUrl: "https://discord.com/api/webhooks/1009734622650834994/RKxPLNbHgfO2JFQFY0CR7u2yCYgdzF71R-9JVt7h2L-LOxs83t77X5XY_wlYJqqz7Edl", message: [embeds: [[color = 3506169, fields = [[name: "1", value: "2", inline: true]]]]])
     } catch (Exception e) {
         try {
-            discordPush(discordUrl = "https://discord.com/api/webhooks/1009734622650834994/RKxPLNbHgfO2JFQFY0CR7u2yCYgdzF71R-9JVt7h2L-LOxs83t77X5XY_wlYJqqz7Edl", message: [embeds: [[color = 14225172, content = e.toString(), fields = [[name: "1", value: "2", inline: true]]]]])
+            discordPush(discordUrl: "https://discord.com/api/webhooks/1009734622650834994/RKxPLNbHgfO2JFQFY0CR7u2yCYgdzF71R-9JVt7h2L-LOxs83t77X5XY_wlYJqqz7Edl", message: [embeds: [[color = 14225172, content = e.toString(), fields = [[name: "1", value: "2", inline: true]]]]])
         } catch (Exception e2) {
             echo e2.toString()
         }
