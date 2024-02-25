@@ -59,5 +59,5 @@ def discordPush(def options) {
     def webhookUrl = options.webhookUrl
     def message = options.message
     def json = writeJSON(json: message, returnText: true)
-    sh("curl -X POST --location \"$discord_webhook_url\" -H \"Content-Type: application/json\" -d '${json}'")
+    sh("curl -X POST --location \"$webhookUrl\" -H \"Content-Type: application/json\" -d '${json}'")
 }
