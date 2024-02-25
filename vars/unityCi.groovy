@@ -25,7 +25,9 @@ def pipeline(def script) {
 def defaultPipeline(def script) {
     def options = script.options
     def nodeLabel = options?.nodeLabel ?: options.env?.NODE_LABEL ?: "unity"
+    echo "before node this.class: ${this.class.simpleName}"
     node(nodeLabel) {
+        echo "after node this.class: ${this.class.simpleName}"
         notify(script: script, buildStatus: "Started", ignoreNode: true)
         this.options = options
         stage("Checkout") {
