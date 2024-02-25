@@ -160,7 +160,7 @@ def discordNotify(def options) {
     if (!webhookUrl) return
     if (notifyStages == null || !notifyStages.contains(buildStatus)) return
 
-    node {
+    node(null) {
         def buildUrl = env?.BUILD_URL
         def jobUrl = env?.JOB_URL
         def jobName = options.script?.env?.JOB_NAME
