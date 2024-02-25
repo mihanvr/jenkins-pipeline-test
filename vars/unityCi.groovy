@@ -153,7 +153,7 @@ def discordPush(def options) {
     def script = options.script
     def env = script.env
     def buildStatus = options.buildStatus
-    if (!notifyStages.contains(buildStatus)) return
+    if (notifyStages == null || !notifyStages.contains(buildStatus)) return
 
     node {
         def webhookUrl = script?.discordWebhookUrl ?: env?.DISCORD_WEBHOOK_URL
