@@ -1,14 +1,14 @@
-def call(def options) {
-    pipeline(options)
+def call(def script) {
+    pipeline(script)
 }
 
-def pipeline(def options) {
+def pipeline(def script) {
     try {
-        discordPush(script: options, webhookUrl: "https://discord.com/api/webhooks/1009734622650834994/RKxPLNbHgfO2JFQFY0CR7u2yCYgdzF71R-9JVt7h2L-LOxs83t77X5XY_wlYJqqz7Edl", buildStatus: "queued", color: 3506169)
+        discordPush(script: script, webhookUrl: "https://discord.com/api/webhooks/1009734622650834994/RKxPLNbHgfO2JFQFY0CR7u2yCYgdzF71R-9JVt7h2L-LOxs83t77X5XY_wlYJqqz7Edl", buildStatus: "queued", color: 3506169)
         throw new Exception("some error")
     } catch (Exception e) {
         try {
-            discordPush(script: options, webhookUrl: "https://discord.com/api/webhooks/1009734622650834994/RKxPLNbHgfO2JFQFY0CR7u2yCYgdzF71R-9JVt7h2L-LOxs83t77X5XY_wlYJqqz7Edl", content: e.toString(), color: 14225172, fields: [[name: "Download", value: "[link](https://jenkins.mi8820.ru)", inline: true]])
+            discordPush(script: script, webhookUrl: "https://discord.com/api/webhooks/1009734622650834994/RKxPLNbHgfO2JFQFY0CR7u2yCYgdzF71R-9JVt7h2L-LOxs83t77X5XY_wlYJqqz7Edl", content: e.toString(), color: 14225172, fields: [[name: "Download", value: "[link](https://jenkins.mi8820.ru)", inline: true]])
         } catch (Exception e2) {
             echo e2.toString()
         }
@@ -58,9 +58,10 @@ def discordNotify() {
 
 def discordPush(def options) {
     node {
-        def webhookUrl = options.webhookUrl
+        def script = options.script
+        def env = script.env
 
-        def env = options.script?.env
+        def webhookUrl = options.webhookUrl
         def buildUrl = env?.BUILD_URL
         def jobName = options.script?.env?.JOB_NAME
         def buildPlatform = options.script?.buildTarget ?: options.script?.env?.BUILD_TARGET
