@@ -30,8 +30,9 @@ def defaultPipeline(def script) {
     def nodeLabel = options?.nodeLabel ?: options.env?.NODE_LABEL ?: "unity"
     echo "before node this.class: ${this.class.simpleName}"
     node(nodeLabel) {
+        env.BUILD_NODE_NAME = env.NODE_NAME
         echo "after node this.class: ${this.class.simpleName}"
-        notify(script: script, buildStatus: "Started", ignoreNode: true)
+        notify(script: script, buildStatus: "Started")
         this.options = options
         stage("Checkout") {
             def gitUrl = options?.gitUrl ?: env?.GIT_URL
@@ -63,11 +64,13 @@ def postWebhook(def script) {
     def artifacts = getBuildArtifacts(script)
     def env = script.env
     def options = script.options
+    def buildTarget = options?.buildTarget ?: env?.BUILD_TARGET
+    def gitBranch = options?.gitBranch ?: env?.GIT_BRANCH
 
     def jsonBody = [
             result               : currentBuild.result,
             project_name         : currentBuild.projectName,
-            git_branch           : env.GIT_BRANCH,
+            git_branch           : gitBranch,
             git_commit           : env.GIT_COMMIT,
             build_duration_millis: currentBuild.duration,
             build_duration       : currentBuild.durationString,
@@ -75,11 +78,11 @@ def postWebhook(def script) {
             build_number         : env.BUILD_NUMBER,
             build_tag            : env.BUILD_TAG,
             build_url            : env.BUILD_URL,
-            build_target         : env.BUILD_TARGET,
+            build_target         : buildTarget,
             job_base_name        : env.JOB_BASE_NAME,
             job_name             : env.JOB_NAME,
             job_url              : env.JOB_URL,
-            node_name            : env.NODE_NAME,
+            node_name            : env.BUILD_NODE_NAME,
             change_log           : changeLog,
             artifacts            : artifacts
     ]
@@ -162,32 +165,11 @@ def discordNotify(def params) {
     def options = script?.options
     def webhookUrl = options?.discordWebhookUrl ?: env?.DISCORD_WEBHOOK_URL
 
-    echo "buildStatus ${buildStatus}"
-    echo "webhookUrl ${webhookUrl}"
-    echo "buildStatus: ${buildStatus} in ${notifyStages} ? ${notifyStages?.contains(buildStatus)}"
-    echo "ignoreNode: ${params.ignoreNode}"
     if (notifyStages == null || !notifyStages.contains(buildStatus)) return
 
     if (!webhookUrl) return
     if (notifyStages == null || !notifyStages.contains(buildStatus)) return
 
-    if (params.ignoreNode) {
-        discordNotifyInNode(params)
-    } else {
-        node {
-            echo "this.class: ${this.class.simpleName}"
-            discordNotifyInNode(params)
-        }
-    }
-}
-
-def discordNotifyInNode(def params) {
-    def script = params.script
-    def env = script?.env
-    def buildStatus = params.buildStatus
-    def options = script?.options
-
-    def webhookUrl = options?.discordWebhookUrl ?: env?.DISCORD_WEBHOOK_URL
     def buildUrl = env?.BUILD_URL
     def jobUrl = env?.JOB_URL
     def jobName = env?.JOB_NAME
@@ -216,8 +198,11 @@ def discordNotifyInNode(def params) {
 
     def json = writeJSON(json: discordContent, returnText: true)
     echo json
-    echo "curl -X POST --location \"$webhookUrl\" -H \"Content-Type: application/json\" -d '${json}'"
-    sh("curl -X POST --location \"$webhookUrl\" -H \"Content-Type: application/json\" -d '${json}'")
+    httpRequest contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, validResponseCodes: '100:599'
+}
+
+def discordNotifyInNode(def params) {
+
 }
 
 def getDiscordEmbedsColorFromStatus(def buildStatus) {
