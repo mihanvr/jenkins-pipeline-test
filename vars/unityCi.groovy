@@ -23,8 +23,7 @@ def defaultPipeline(def script) {
     def options = script.options
     def nodeLabel = options?.nodeLabel ?: options.env?.NODE_LABEL ?: "unity"
     node(nodeLabel) {
-        script.env += env
-        def env = script.env
+        this.options = options
         stage("Checkout") {
             def gitUrl = options?.gitUrl ?: env?.GIT_URL
             def gitCredentials = options?.gitCredentials ?: env?.GIT_CREDENTIALS
@@ -42,10 +41,10 @@ def defaultPipeline(def script) {
         }
 
         stage("Build") {
-            unityBuilder.build(script)
+            unityBuilder.build(this)
         }
         stage("Zip") {
-            unityBuilder.processArtifacts(script)
+            unityBuilder.processArtifacts(this)
         }
 
         webhook.post(options)
