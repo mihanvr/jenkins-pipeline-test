@@ -15,7 +15,7 @@ def build(def options) {
     def locationPathName = getLocationPathName(options)
 
     webhook.getBuildArtifacts(options)
-    withCredentials([string(credentialsId: 'ani-cred', variable: 'xApiKeyCred')]) {
+    withCredentials([string(credentialsId: 'webhook_mi8820', variable: 'xApiKeyCred')]) {
         echo 'test'
     }
 
