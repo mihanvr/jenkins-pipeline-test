@@ -14,6 +14,11 @@ def build(def options) {
 
     def locationPathName = getLocationPathName(options)
 
+    webhook.getBuildArtifacts(options)
+    withCredentials([string(credentialsId: 'ani-cred', variable: 'xApiKeyCred')]) {
+        echo 'test'
+    }
+
     String unityVersion
     String unityRevision
 
