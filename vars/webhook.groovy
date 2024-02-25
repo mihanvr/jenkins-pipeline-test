@@ -1,4 +1,4 @@
-def post(def options) {
+def postWebhook(def options) {
     def changeLog = getChangeLogFromLatestSuccess(options)
     def artifacts = getBuildArtifacts(options)
 
@@ -26,7 +26,7 @@ def post(def options) {
 
     def webhookUrl = options.webhookUrl ?: env?.WEBHOOK_URL
 
-    if (currentBuild.result == 'SUCCESS' && webhookUrl) {
+    if (/*currentBuild.result == 'SUCCESS' && */webhookUrl) {
         def customHeaders = []
 
         def xApiKey = options.xApiKey ?: env?.X_API_KEY
@@ -42,48 +42,4 @@ def post(def options) {
         }
         httpRequest consoleLogResponseBody: true, contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, customHeaders: customHeaders, validResponseCodes: '100:599'
     }
-}
-
-@NonCPS
-def getBuildArtifacts(def options) {
-    def currentBuild = options.currentBuild ?: options.script?.currentBuild
-
-    def buildArtifacts = currentBuild.rawBuild.artifacts
-    def artifacts = []
-    def env = options.env ?: options.script?.env
-    for (int i = 0; i < buildArtifacts.size(); i++) {
-        def file = buildArtifacts[i]
-        artifacts.add([size: "${file.fileSize}", name: "${file.fileName}", href: "${env.BUILD_URL}artifact/${file.fileName}"])
-    }
-    return artifacts
-}
-
-@NonCPS
-def getChangeLogFromLatestSuccess(def options) {
-    def currentBuild = options.currentBuild ?: options.script?.currentBuild
-    def build = currentBuild
-    def passedBuilds = []
-    while (build != null) {
-        passedBuilds.add(build)
-        if (build.result == 'SUCCESS') break
-        build = build.getPreviousBuild()
-    }
-    return getChangeLog(passedBuilds)
-}
-
-@NonCPS
-def getChangeLog(def passedBuilds) {
-    def log = ""
-    for (int x = 0; x < passedBuilds.size(); x++) {
-        def currentBuild = passedBuilds[x]
-        def changeLogSets = currentBuild.rawBuild.changeSets
-        for (int i = 0; i < changeLogSets.size(); i++) {
-            def entries = changeLogSets[i].items
-            for (int j = 0; j < entries.length; j++) {
-                def entry = entries[j]
-                log += "* ${entry.msg} by ${entry.author} \n"
-            }
-        }
-    }
-    return log
 }

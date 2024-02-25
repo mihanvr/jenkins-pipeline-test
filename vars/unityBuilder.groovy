@@ -1,5 +1,6 @@
-def build(def options) {
-    def env = options?.env ?: options?.script?.env
+def build(def script) {
+    def options = script.options
+    def env = script?.env
     def autoDetectUnityVersion = (options.autoDetectUnityVersion ?: env?.AUTO_DETECT_UNITY_VERSION ?: true).toBoolean()
     def unityHubPath = options.unityHubPath ?: env?.UNITY_HUB_PATH
     def projectDir = options.projectDir ?: env?.PROJECT_DIR ?: '.'
@@ -12,7 +13,7 @@ def build(def options) {
     def postBuildMethod = options.postBuildMethod ?: env?.POST_BUILD_METHOD
     def outputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
 
-    def locationPathName = getLocationPathName(options)
+    def locationPathName = getLocationPathName(script)
 
     String unityVersion
     String unityRevision
@@ -73,8 +74,9 @@ def build(def options) {
     ]
 }
 
-def processArtifacts(def options) {
-    def env = options?.env ?: options?.script?.env
+def processArtifacts(def script) {
+    def options = script.options
+    def env = script?.env
     def buildTag = options.buildTag ?: env?.BUILD_TAG
     def outputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
     def buildTarget = options.buildTarget ?: env?.BUILD_TARGET
@@ -112,8 +114,9 @@ def getProjectUnityVersionAndRevision(String projectDir) {
     return ['', '']
 }
 
-def getLocationPathName(def options) {
-    def env = options?.env ?: options?.script?.env
+def getLocationPathName(def script) {
+    def options = script.options
+    def env = script?.env
     def buildOutputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
     def buildTarget = options.buildTarget ?: env?.BUILD_TARGET
 
