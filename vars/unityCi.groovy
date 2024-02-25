@@ -166,7 +166,7 @@ def discordPush(def options) {
         fields.add([name: "Job", value: jobName, inline: true])
         fields.add([name: "Platform", value: buildPlatform, inline: true])
 
-        def artifacts = getBuildArtifacts(options)
+        def artifacts = getBuildArtifacts(script)
         if (artifacts.size() > 0) {
             def art0 = artifacts[0]
             fields.add([name: "Download", value: art0.href, inline: true])
