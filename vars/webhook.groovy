@@ -1,4 +1,4 @@
-def post(options) {
+def post(def options) {
     def changeLog = getChangeLogFromLatestSuccess(options)
     def artifacts = getBuildArtifacts(options)
 
@@ -46,22 +46,21 @@ def post(options) {
 }
 
 @NonCPS
-def getBuildArtifacts(options) {
+def getBuildArtifacts(def options) {
     def currentBuild = options.currentBuild ?: options.script?.currentBuild
 
     def buildArtifacts = currentBuild.rawBuild.artifacts
     def artifacts = []
     def env = options.env ?: options.script?.env
     for (int i = 0; i < buildArtifacts.size(); i++) {
-        file = buildArtifacts[i]
-//        artifacts.add([size: "${file.fileSize}", name: "${file.fileName}", href: "${env.BUILD_URL}artifact/${file.fileName}"])
+        def file = buildArtifacts[i]
+        artifacts.add([size: "${file.fileSize}", name: "${file.fileName}", href: "${env.BUILD_URL}artifact/${file.fileName}"])
     }
-//    return artifacts
-    return []
+    return artifacts
 }
 
 @NonCPS
-def getChangeLogFromLatestSuccess(options) {
+def getChangeLogFromLatestSuccess(def options) {
     def currentBuild = options.currentBuild ?: options.script?.currentBuild
     def build = currentBuild
     def passedBuilds = []
@@ -74,7 +73,7 @@ def getChangeLogFromLatestSuccess(options) {
 }
 
 @NonCPS
-def getChangeLog(passedBuilds) {
+def getChangeLog(def passedBuilds) {
     def log = ""
     for (int x = 0; x < passedBuilds.size(); x++) {
         def currentBuild = passedBuilds[x]
