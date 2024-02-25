@@ -184,6 +184,7 @@ def discordNotifyInNode(def params) {
     def buildStatus = params.buildStatus
     def options = script?.options
 
+    def webhookUrl = options?.discordWebhookUrl ?: env?.DISCORD_WEBHOOK_URL
     def buildUrl = env?.BUILD_URL
     def jobUrl = env?.JOB_URL
     def jobName = env?.JOB_NAME
