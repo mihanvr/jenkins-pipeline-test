@@ -27,6 +27,7 @@ def defaultPipeline(def script) {
     def options = script.options
     def nodeLabel = options?.nodeLabel ?: options.env?.NODE_LABEL ?: "unity"
     node(nodeLabel) {
+        discordPush(script: script, buildStatus: "Started")
         this.options = options
         stage("Checkout") {
             def gitUrl = options?.gitUrl ?: env?.GIT_URL
@@ -148,17 +149,19 @@ def getChangeLog(def passedBuilds) {
 }
 
 def discordPush(def options) {
-    node {
-        def script = options.script
-        def env = script.env
+    def notifyStages = options.script?.options?.notifyStages
+    def script = options.script
+    def env = script.env
+    def buildStatus = options.buildStatus
+    if (!notifyStages.contains(buildStatus)) return
 
+    node {
         def webhookUrl = script?.discordWebhookUrl ?: env?.DISCORD_WEBHOOK_URL
         def buildUrl = env?.BUILD_URL
         def jobUrl = env?.JOB_URL
         def jobName = options.script?.env?.JOB_NAME
         def buildPlatform = options.script?.options?.buildTarget ?: options.script?.env?.BUILD_TARGET
         def content = options.content
-        def buildStatus = options.buildStatus
         def embedsColor = options.color ?: getDiscordEmbedsColorFromStatus(buildStatus)
 
         def buildNumber = env?.BUILD_NUMBER
@@ -170,7 +173,7 @@ def discordPush(def options) {
         def fields = []
         embeds.fields = fields
 
-        fields.add([name: "Build ${buildStatus}", value: "#[${buildNumber}](${buildUrl})", inline: true])
+        fields.add([name: "Build ${buildStatus}", value: "[#${buildNumber}](${buildUrl})", inline: true])
         fields.add([name: "Job", value: "[${jobName}](${jobUrl})", inline: true])
         fields.add([name: "Platform", value: buildPlatform, inline: true])
 
@@ -191,6 +194,7 @@ def getDiscordEmbedsColorFromStatus(def buildStatus) {
     if (buildStatus == 'Failed') return 14225172
     if (buildStatus == 'Queued') return 3506169
     if (buildStatus == 'Success') return 42837
+    if (buildStatus == 'Started') return 3506169
     if (buildStatus == 'Canceled') return 15258703
     return null
 }
