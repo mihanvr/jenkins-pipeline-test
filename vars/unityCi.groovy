@@ -11,7 +11,7 @@ def pipeline(def script) {
         postWebhook(script)
     } catch (Exception e) {
         try {
-            if (e instanceof org.jenkinsci.plugins.workflow.steps.FlowInterruptedException) {
+            if (e instanceof InterruptedException) {
                 discordPush(script: script, buildStatus: "Canceled")
             } else {
                 discordPush(script: script, content: e.toString(), buildStatus: "Failed")
@@ -180,7 +180,7 @@ def discordPush(def options) {
         def artifacts = getBuildArtifacts(script)
         if (artifacts.size() > 0) {
             def art0 = artifacts[0]
-            fields.add([name: "Download", value: art0.href, inline: true])
+            fields.add([name: "Download", value: "[${art0.name}](${art0.href})", inline: true])
         }
 
         def json = writeJSON(json: discordContent, returnText: true)
