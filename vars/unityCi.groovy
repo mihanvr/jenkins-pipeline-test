@@ -12,8 +12,10 @@ def pipeline(def script) {
     } catch (Exception e) {
         try {
             if (e instanceof InterruptedException) {
+                script.currentBuild.result = 'CANCELED'
                 notify(script: script, buildStatus: "Canceled")
             } else {
+                script.currentBuild.result = 'FAILED'
                 notify(script: script, content: e.toString(), buildStatus: "Failed")
             }
         } catch (Exception e2) {
