@@ -158,43 +158,49 @@ def discordNotify(def options) {
     def buildStatus = options.buildStatus
     def webhookUrl = options?.discordWebhookUrl ?: env?.DISCORD_WEBHOOK_URL
     if (!webhookUrl) return
-    echo "buildStatus: ${buildStatus} in ${notifyStages} ? ${notifyStages?.contains(buildStatus)}"
     if (notifyStages == null || !notifyStages.contains(buildStatus)) return
 
-    echo "discordNotify ${buildStatus}"
-
-    node(null) {
-        def buildUrl = env?.BUILD_URL
-        def jobUrl = env?.JOB_URL
-        def jobName = options.script?.env?.JOB_NAME
-        def buildPlatform = options.script?.options?.buildTarget ?: options.script?.env?.BUILD_TARGET
-        def content = options.content
-        def embedsColor = options.color ?: getDiscordEmbedsColorFromStatus(buildStatus)
-
-        def buildNumber = env?.BUILD_NUMBER
-
-        def embeds = [:]
-        def discordContent = [embeds: [embeds]]
-        if (content) discordContent.content = content
-        if (embedsColor) embeds.color = embedsColor
-        def fields = []
-        embeds.fields = fields
-
-        fields.add([name: "Build ${buildStatus}", value: "[#${buildNumber}](${buildUrl})", inline: true])
-        fields.add([name: "Job", value: "[${jobName}](${jobUrl})", inline: true])
-        fields.add([name: "Platform", value: buildPlatform, inline: true])
-
-        def artifacts = getBuildArtifacts(script)
-        if (artifacts.size() > 0) {
-            def art0 = artifacts[0]
-            fields.add([name: "Download", value: "[${art0.name}](${art0.href})", inline: true])
-        }
-
-        def json = writeJSON(json: discordContent, returnText: true)
-        echo json
-        echo "curl -X POST --location \"$webhookUrl\" -H \"Content-Type: application/json\" -d '${json}'"
-        sh("curl -X POST --location \"$webhookUrl\" -H \"Content-Type: application/json\" -d '${json}'")
+    node {
+        echo "this.class: ${this.class.simpleName}"
+        discordNotifyInNode(options)
     }
+}
+
+def discordNotifyInNode(def options) {
+    def script = options.script
+    def env = script.env
+    def buildStatus = options.buildStatus
+
+    def buildUrl = env?.BUILD_URL
+    def jobUrl = env?.JOB_URL
+    def jobName = options.script?.env?.JOB_NAME
+    def buildPlatform = options.script?.options?.buildTarget ?: options.script?.env?.BUILD_TARGET
+    def content = options.content
+    def embedsColor = options.color ?: getDiscordEmbedsColorFromStatus(buildStatus)
+
+    def buildNumber = env?.BUILD_NUMBER
+
+    def embeds = [:]
+    def discordContent = [embeds: [embeds]]
+    if (content) discordContent.content = content
+    if (embedsColor) embeds.color = embedsColor
+    def fields = []
+    embeds.fields = fields
+
+    fields.add([name: "Build ${buildStatus}", value: "[#${buildNumber}](${buildUrl})", inline: true])
+    fields.add([name: "Job", value: "[${jobName}](${jobUrl})", inline: true])
+    fields.add([name: "Platform", value: buildPlatform, inline: true])
+
+    def artifacts = getBuildArtifacts(script)
+    if (artifacts.size() > 0) {
+        def art0 = artifacts[0]
+        fields.add([name: "Download", value: "[${art0.name}](${art0.href})", inline: true])
+    }
+
+    def json = writeJSON(json: discordContent, returnText: true)
+    echo json
+    echo "curl -X POST --location \"$webhookUrl\" -H \"Content-Type: application/json\" -d '${json}'"
+    sh("curl -X POST --location \"$webhookUrl\" -H \"Content-Type: application/json\" -d '${json}'")
 }
 
 def getDiscordEmbedsColorFromStatus(def buildStatus) {
