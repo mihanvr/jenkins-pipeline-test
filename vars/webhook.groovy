@@ -35,7 +35,6 @@ def post(def options) {
         } else {
             def webhookCredentials = options.webhookCredentials ?: env?.WEBHOOK_CREDENTIALS
             if (webhookCredentials) {
-                echo webhookCredentials
                 withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKeyCred')]) {
                     customHeaders.add([name: 'X-API-KEY', value: "${xApiKeyCred}"])
                 }

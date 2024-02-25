@@ -1,6 +1,6 @@
 def build(def options) {
     def env = options?.env ?: options?.script?.env
-    def autoDetectUnityVersion = (options.autoDetectUnityVersion ?: env?.AUTO_DETECT_UNITY_VERSION ?: false).toBoolean()
+    def autoDetectUnityVersion = (options.autoDetectUnityVersion ?: env?.AUTO_DETECT_UNITY_VERSION ?: true).toBoolean()
     def unityHubPath = options.unityHubPath ?: env?.UNITY_HUB_PATH
     def projectDir = options.projectDir ?: env?.PROJECT_DIR ?: '.'
     def scenes = options.scenes
@@ -82,6 +82,7 @@ def processArtifacts(def options) {
         case 'standalonewindows64':
         case 'standalonelinux64':
         case 'webgl':
+
             def archiveFileName = "${buildTag}.zip"
             zip zipFile: archiveFileName, dir: outputPath, overwrite: true, archive: true
             break
