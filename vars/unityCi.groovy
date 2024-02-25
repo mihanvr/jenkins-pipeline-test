@@ -8,7 +8,7 @@ def pipeline(def script) {
         throw new Exception("some error")
     } catch (Exception e) {
         try {
-            discordPush(script: script, webhookUrl: "https://discord.com/api/webhooks/1009734622650834994/RKxPLNbHgfO2JFQFY0CR7u2yCYgdzF71R-9JVt7h2L-LOxs83t77X5XY_wlYJqqz7Edl", content: e.toString(), color: 14225172, fields: [[name: "Download", value: "[link](https://jenkins.mi8820.ru)", inline: true]])
+            discordPush(script: script, webhookUrl: "https://discord.com/api/webhooks/1009734622650834994/RKxPLNbHgfO2JFQFY0CR7u2yCYgdzF71R-9JVt7h2L-LOxs83t77X5XY_wlYJqqz7Edl", content: e.toString(), buildStatus: "Failed", color: 14225172)
         } catch (Exception e2) {
             echo e2.toString()
         }
@@ -70,7 +70,7 @@ def discordPush(def options) {
         def buildStatus = options.buildStatus
 
         def embeds = [:]
-        def discordContent = [embeds: embeds]
+        def discordContent = [embeds: [embeds]]
         if (content) discordContent.content = content
         if (embedsColor) embeds.color = embedsColor
         def fields = []
