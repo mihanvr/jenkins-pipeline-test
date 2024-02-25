@@ -47,13 +47,15 @@ def defaultPipeline(def script) {
             unityBuilder.processArtifacts(this)
         }
 
-        webhook.post(options)
+        postWebhook(script)
     }
 }
 
-def postWebhook(def options) {
-    def changeLog = getChangeLogFromLatestSuccess(options)
-    def artifacts = getBuildArtifacts(options)
+def postWebhook(def script) {
+    def changeLog = getChangeLogFromLatestSuccess(script)
+    def artifacts = getBuildArtifacts(script)
+    def env = script.env
+    def options = script.options
 
     def jsonBody = [
             result               : currentBuild.result,
@@ -77,16 +79,16 @@ def postWebhook(def options) {
     def json = writeJSON returnText: true, json: jsonBody
     echo "Post body: ${json}"
 
-    def webhookUrl = options.webhookUrl ?: env?.WEBHOOK_URL
+    def webhookUrl = options?.webhookUrl ?: env?.WEBHOOK_URL
 
     if (/*currentBuild.result == 'SUCCESS' && */ webhookUrl) {
         def customHeaders = []
 
-        def xApiKey = options.xApiKey ?: env?.X_API_KEY
+        def xApiKey = options?.xApiKey ?: env?.X_API_KEY
         if (xApiKey) {
             customHeaders.add([name: 'X-API-KEY', value: xApiKey])
         } else {
-            def webhookCredentials = options.webhookCredentials ?: env?.WEBHOOK_CREDENTIALS
+            def webhookCredentials = options?.webhookCredentials ?: env?.WEBHOOK_CREDENTIALS
             if (webhookCredentials) {
                 withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKeyCred')]) {
                     customHeaders.add([name: 'X-API-KEY', value: "${xApiKeyCred}"])
@@ -98,12 +100,12 @@ def postWebhook(def options) {
 }
 
 @NonCPS
-def getBuildArtifacts(def options) {
-    def currentBuild = options.currentBuild ?: options.script?.currentBuild
+def getBuildArtifacts(def script) {
+    def currentBuild = script.currentBuild
 
     def buildArtifacts = currentBuild.rawBuild.artifacts
     def artifacts = []
-    def env = options.env ?: options.script?.env
+    def env = script.env ?: script.script?.env
     for (int i = 0; i < buildArtifacts.size(); i++) {
         def file = buildArtifacts[i]
         artifacts.add([size: "${file.fileSize}", name: "${file.fileName}", href: "${env.BUILD_URL}artifact/${file.fileName}"])
@@ -112,8 +114,8 @@ def getBuildArtifacts(def options) {
 }
 
 @NonCPS
-def getChangeLogFromLatestSuccess(def options) {
-    def currentBuild = options.currentBuild ?: options.script?.currentBuild
+def getChangeLogFromLatestSuccess(def script) {
+    def currentBuild = script.currentBuild
     def build = currentBuild
     def passedBuilds = []
     while (build != null) {
@@ -163,6 +165,12 @@ def discordPush(def options) {
         fields.add([name: "Build ${buildStatus}", value: "[link](${buildUrl})", inline: true])
         fields.add([name: "Job", value: jobName, inline: true])
         fields.add([name: "Platform", value: buildPlatform, inline: true])
+
+        def artifacts = getBuildArtifacts(options)
+        if (artifacts.size() > 0) {
+            def art0 = artifacts[0]
+            fields.add([name: "Download", value: art0.href, inline: true])
+        }
 
         def json = writeJSON(json: discordContent, returnText: true)
         echo json
