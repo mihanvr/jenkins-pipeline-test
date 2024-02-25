@@ -26,7 +26,7 @@ def defaultPipeline(def script) {
     def options = script.options
     def nodeLabel = options?.nodeLabel ?: options.env?.NODE_LABEL ?: "unity"
     node(nodeLabel) {
-        notify(script: script, buildStatus: "Started")
+        notify(script: script, buildStatus: "Started", ignoreNode: true)
         this.options = options
         stage("Checkout") {
             def gitUrl = options?.gitUrl ?: env?.GIT_URL
@@ -160,9 +160,13 @@ def discordNotify(def options) {
     if (!webhookUrl) return
     if (notifyStages == null || !notifyStages.contains(buildStatus)) return
 
-    node {
-        echo "this.class: ${this.class.simpleName}"
+    if (options.ignoreNode) {
         discordNotifyInNode(options)
+    } else {
+        node {
+            echo "this.class: ${this.class.simpleName}"
+            discordNotifyInNode(options)
+        }
     }
 }
 
