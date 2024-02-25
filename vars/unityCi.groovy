@@ -7,6 +7,7 @@ def pipeline(def script) {
         notify(script: script, buildStatus: "Queued")
         defaultPipeline(script)
         notify(script: script, buildStatus: "Success", fields: [])
+        script.currentBuild.result = 'SUCCESS'
         postWebhook(script)
     } catch (Exception e) {
         try {
@@ -52,8 +53,6 @@ def defaultPipeline(def script) {
         stage("Zip") {
             unityBuilder.processArtifacts(this)
         }
-
-        postWebhook(script)
     }
 }
 
