@@ -11,7 +11,11 @@ def pipeline(def script) {
         postWebhook(script)
     } catch (Exception e) {
         try {
-            discordPush(script: script, content: e.toString(), buildStatus: "Failed")
+            if (e instanceof org.jenkinsci.plugins.workflow.steps.FlowInterruptedException) {
+                discordPush(script: script, buildStatus: "Canceled")
+            } else {
+                discordPush(script: script, content: e.toString(), buildStatus: "Failed")
+            }
         } catch (Exception e2) {
             echo e2.toString()
         }
@@ -150,11 +154,14 @@ def discordPush(def options) {
 
         def webhookUrl = script?.discordWebhookUrl ?: env?.DISCORD_WEBHOOK_URL
         def buildUrl = env?.BUILD_URL
+        def jobUrl = env?.JOB_URL
         def jobName = options.script?.env?.JOB_NAME
         def buildPlatform = options.script?.options?.buildTarget ?: options.script?.env?.BUILD_TARGET
         def content = options.content
         def buildStatus = options.buildStatus
         def embedsColor = options.color ?: getDiscordEmbedsColorFromStatus(buildStatus)
+
+        def buildNumber = env?.BUILD_NUMBER
 
         def embeds = [:]
         def discordContent = [embeds: [embeds]]
@@ -162,8 +169,9 @@ def discordPush(def options) {
         if (embedsColor) embeds.color = embedsColor
         def fields = []
         embeds.fields = fields
-        fields.add([name: "Build ${buildStatus}", value: "[link](${buildUrl})", inline: true])
-        fields.add([name: "Job", value: jobName, inline: true])
+
+        fields.add([name: "Build ${buildStatus}", value: "#[${buildNumber}](${buildUrl})", inline: true])
+        fields.add([name: "Job", value: "[${jobName}](${jobUrl})", inline: true])
         fields.add([name: "Platform", value: buildPlatform, inline: true])
 
         def artifacts = getBuildArtifacts(script)
