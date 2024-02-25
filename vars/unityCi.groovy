@@ -64,7 +64,7 @@ def discordPush(def options) {
         def webhookUrl = options.webhookUrl
         def buildUrl = env?.BUILD_URL
         def jobName = options.script?.env?.JOB_NAME
-        def buildPlatform = options.script?.buildTarget ?: options.script?.env?.BUILD_TARGET
+        def buildPlatform = options.script?.options?.buildTarget ?: options.script?.env?.BUILD_TARGET
         def content = options.content
         def embedsColor = options.color
         def buildStatus = options.buildStatus
