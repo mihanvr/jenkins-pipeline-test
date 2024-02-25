@@ -68,7 +68,7 @@ def discordPush(def options) {
         def embedsColor = options.color
         def buildStatus = options.buildStatus
 
-        def embeds = []
+        def embeds = [:]
         def discordContent = [embeds: embeds]
         if (content) discordContent.content = content
         if (embedsColor) embeds.color = embedsColor
