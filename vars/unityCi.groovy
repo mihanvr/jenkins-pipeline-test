@@ -151,11 +151,12 @@ def notify(def options) {
     discordNotify(options)
 }
 
-def discordNotify(def options) {
-    def notifyStages = options.script?.options?.notifyStages
-    def script = options.script
-    def env = script.env
-    def buildStatus = options.buildStatus
+def discordNotify(def params) {
+    def script = params.script
+    def notifyStages = script?.options?.notifyStages
+    def env = script?.env
+    def buildStatus = params.buildStatus
+    def options = script?.options
     def webhookUrl = options?.discordWebhookUrl ?: env?.DISCORD_WEBHOOK_URL
 
     echo "buildStatus ${buildStatus}"
@@ -167,27 +168,28 @@ def discordNotify(def options) {
     if (!webhookUrl) return
     if (notifyStages == null || !notifyStages.contains(buildStatus)) return
 
-    if (options.ignoreNode) {
-        discordNotifyInNode(options)
+    if (params.ignoreNode) {
+        discordNotifyInNode(params)
     } else {
         node {
             echo "this.class: ${this.class.simpleName}"
-            discordNotifyInNode(options)
+            discordNotifyInNode(params)
         }
     }
 }
 
-def discordNotifyInNode(def options) {
-    def script = options.script
-    def env = script.env
-    def buildStatus = options.buildStatus
+def discordNotifyInNode(def params) {
+    def script = params.script
+    def env = script?.env
+    def buildStatus = params.buildStatus
+    def options = script?.options
 
     def buildUrl = env?.BUILD_URL
     def jobUrl = env?.JOB_URL
-    def jobName = options.script?.env?.JOB_NAME
-    def buildPlatform = options.script?.options?.buildTarget ?: options.script?.env?.BUILD_TARGET
-    def content = options.content
-    def embedsColor = options.color ?: getDiscordEmbedsColorFromStatus(buildStatus)
+    def jobName = env?.JOB_NAME
+    def buildPlatform = options?.buildTarget ?: env?.BUILD_TARGET
+    def content = params.content
+    def embedsColor = params.color ?: getDiscordEmbedsColorFromStatus(buildStatus)
 
     def buildNumber = env?.BUILD_NUMBER
 
