@@ -157,6 +157,13 @@ def discordNotify(def options) {
     def env = script.env
     def buildStatus = options.buildStatus
     def webhookUrl = options?.discordWebhookUrl ?: env?.DISCORD_WEBHOOK_URL
+
+    echo "buildStatus ${buildStatus}"
+    echo "webhookUrl ${webhookUrl}"
+    echo "buildStatus: ${buildStatus} in ${notifyStages} ? ${notifyStages?.contains(buildStatus)}"
+    echo "ignoreNode: ${status.ignoreNode}"
+    if (notifyStages == null || !notifyStages.contains(buildStatus)) return
+
     if (!webhookUrl) return
     if (notifyStages == null || !notifyStages.contains(buildStatus)) return
 
