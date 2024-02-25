@@ -162,7 +162,7 @@ def discordNotify(def params) {
     echo "buildStatus ${buildStatus}"
     echo "webhookUrl ${webhookUrl}"
     echo "buildStatus: ${buildStatus} in ${notifyStages} ? ${notifyStages?.contains(buildStatus)}"
-    echo "ignoreNode: ${status.ignoreNode}"
+    echo "ignoreNode: ${params.ignoreNode}"
     if (notifyStages == null || !notifyStages.contains(buildStatus)) return
 
     if (!webhookUrl) return
