@@ -72,7 +72,7 @@ def postWebhook(def script) {
     def env = script.env
     def options = script.options
     def buildTarget = options?.buildTarget ?: env?.BUILD_TARGET
-    def gitBranch = options?.gitBranch ?: env?.GIT_BRANCH
+    def gitBranch = options?.gitBranch ?: env?.BRANCH_NAME
 
     def jsonBody = [
             result               : currentBuild.result,
