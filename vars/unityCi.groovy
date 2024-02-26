@@ -213,7 +213,9 @@ def discordNotify(def params) {
     if (artifacts.size() > 0) {
         def art0 = artifacts[0]
         fields.add([name: "Download", value: "[${art0.name}](${art0.href})", inline: true])
-        fields.add([name: "Build Size", value: "${toPrettySize(art0.size.toString().toInteger())}", inline: true])
+        if (art0.size) {
+            fields.add([name: "Build Size", value: "${toPrettySize(art0.size.toString().toInteger())}", inline: true])
+        }
     }
 
     def json = writeJSON(json: discordContent, returnText: true)
