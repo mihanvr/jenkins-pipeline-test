@@ -201,6 +201,10 @@ def discordNotify(def params) {
     if (gitBranch) {
         fields.add([name: "Branch", value: gitBranch, inline: true])
     }
+    def buildNodeName = env?.BUILD_NODE_NAME
+    if (buildNodeName) {
+        fields.add([name: "Node", value: buildNodeName, inline: true])
+    }
 
     def artifacts = getBuildArtifacts(script)
     if (artifacts.size() > 0) {
