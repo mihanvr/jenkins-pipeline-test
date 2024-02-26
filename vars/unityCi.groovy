@@ -35,18 +35,25 @@ def defaultPipeline(def script) {
         notify(script: script, buildStatus: "Started")
         this.options = options
         stage("Checkout") {
-            def gitUrl = options?.gitUrl ?: env?.GIT_URL
-            def gitCredentials = options?.gitCredentials ?: env?.GIT_CREDENTIALS
-            def gitBranch = options?.gitBranch ?: env?.GIT_BRANCH
-            def userRemoteConfigs = [url: gitUrl]
-            if (gitCredentials) {
-                userRemoteConfigs.credentialsId = gitCredentials
+            def scm
+            if (script.scm) {
+                scm = script.scm
+            } else {
+                def gitUrl = options?.gitUrl ?: env?.GIT_URL
+                def gitCredentials = options?.gitCredentials ?: env?.GIT_CREDENTIALS
+                def gitBranch = options?.gitBranch ?: env?.GIT_BRANCH
+                def userRemoteConfigs = [url: gitUrl]
+                if (gitCredentials) {
+                    userRemoteConfigs.credentialsId = gitCredentials
+                }
+
+                scm = scmGit(
+                        branches: [[name: gitBranch]],
+                        extensions: [lfs()],
+                        userRemoteConfigs: [userRemoteConfigs]
+                )
             }
-            def scmVars = checkout scmGit(
-                    branches: [[name: gitBranch]],
-                    extensions: [lfs()],
-                    userRemoteConfigs: [userRemoteConfigs]
-            )
+            def scmVars = checkout(scm)
             env.GIT_COMMIT = scmVars.GIT_COMMIT
         }
 
