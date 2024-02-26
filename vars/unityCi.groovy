@@ -213,6 +213,7 @@ def discordNotify(def params) {
     if (artifacts.size() > 0) {
         def art0 = artifacts[0]
         fields.add([name: "Download", value: "[${art0.name}](${art0.href})", inline: true])
+        fields.add([name: "Build Size", value: "${toPrettySize(art0.size)}", inline: true])
     }
 
     def json = writeJSON(json: discordContent, returnText: true)
@@ -220,8 +221,20 @@ def discordNotify(def params) {
     httpRequest contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, validResponseCodes: '100:599'
 }
 
-def discordNotifyInNode(def params) {
+def toPrettySize(def sizeInBytes) {
+    def B = 1024
+    def KB = 1024 * B
+    def MB = 1024 * KB
 
+    def wholeMb = (int) (sizeInBytes / MB)
+    if (wholeMb > 0) {
+        return "${wholeMb} MB"
+    }
+    def wholeKb = (int) (sizeInBytes / KB)
+    if (wholeKb > 0) {
+        return "${wholeMb} KB"
+    }
+    return "${sizeInBytes} B"
 }
 
 def getDiscordEmbedsColorFromStatus(def buildStatus) {
