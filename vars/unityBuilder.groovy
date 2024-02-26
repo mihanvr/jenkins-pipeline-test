@@ -27,7 +27,7 @@ def build(def script) {
     }
 
     unityHub.init(unityHubPath)
-    def unityPath = unityHub.getUnityPath(unityVersion, unityRevision, false)
+    def unityPath = unityHub.getUnityPath(unityVersion, unityRevision, true)
     unityHub.installUnityModules(unityVersion, getRequiredUnityModules(buildTarget))
     unity.init(unityPath)
 
@@ -76,19 +76,15 @@ def build(def script) {
 }
 
 def getRequiredUnityModules(String buildTarget) {
-    switch (buildTarget) {
-        case "Win64":
-        case "Win":
+    switch (buildTarget?.toLowerCase()) {
+        case "standalonewindows64":
             return ['windows']
-        case "WebGL":
+        case "webgl":
             return ['webgl']
-        case "Android":
+        case "android":
             return ['android', 'android-open-jdk', 'android-sdk-ndk-tools']
-        case "iOS":
+        case "ios":
             return ['ios']
-        case "Standalone":
-        case "Linux64":
-            break
     }
     return []
 }

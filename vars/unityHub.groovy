@@ -70,7 +70,7 @@ def getInstalledEditorPath(String editorVersion) {
 }
 
 
-def getUnityPath(String editorVersion, String editorVersionRevision = '', boolean autoInstallEditor = false) {
+def getUnityPath(String editorVersion, String editorVersionRevision = '', boolean autoInstallEditor = true) {
     if (!editorVersion) {
         log.error('unity version required, but not defined')
     }
@@ -97,7 +97,7 @@ def getUnityPath(String editorVersion, String editorVersionRevision = '', boolea
 
 def installUnityModules(String editorVersion, List<String> modules) {
     if (modules.size() == 0) return
-    exec label: 'Install required editor modules', script: "\"${UnityHubConfiguration.unityHubPath}\" -- --headless install-modules --version ${editorVersion} -m ${String.join(' ', modules)}"
+    exec label: 'Install required editor modules', script: "\"${UnityHubConfiguration.unityHubPath}\" -- --headless install-modules --version ${editorVersion} -m ${String.join(' ', modules)} --cm"
 }
 
 private def ensureUnityHubExecutableExists(String unityHubPath) {
