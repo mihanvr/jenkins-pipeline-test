@@ -72,7 +72,7 @@ def postWebhook(def script) {
     def env = script.env
     def options = script.options
     def buildTarget = options?.buildTarget ?: env?.BUILD_TARGET
-    def gitBranch = options?.gitBranch ?: env?.BRANCH_NAME
+    def gitBranch = script.scm?.arguments?.branches?.get(0)?.name ?: options?.gitBranch ?: env?.GIT_BRANCH
 
     def jsonBody = [
             result               : currentBuild.result,
@@ -196,6 +196,11 @@ def discordNotify(def params) {
     fields.add([name: "Build ${buildStatus}", value: "[#${buildNumber}](${buildUrl})", inline: true])
     fields.add([name: "Job", value: "[${jobName}](${jobUrl})", inline: true])
     fields.add([name: "Platform", value: buildPlatform, inline: true])
+
+    def gitBranch = script.scm?.arguments?.branches?.get(0)?.name ?: options?.gitBranch ?: env?.GIT_BRANCH
+    if (gitBranch) {
+        fields.add([name: "Branch", value: gitBranch, inline: true])
+    }
 
     def artifacts = getBuildArtifacts(script)
     if (artifacts.size() > 0) {
