@@ -198,7 +198,7 @@ def discordNotify(def params) {
     fields.add([name: "Platform", value: buildPlatform, inline: true])
 
     if (buildStatus == 'Started') {
-        def startedByCause = script.currentBuild?.getBuildCauses('hudson.model.Cause$UserIdCause')?.shortDescription
+        def startedByCause = script.currentBuild?.getBuildCauses('hudson.model.Cause$UserIdCause')?.shortDescription?.get(0)
         if (startedByCause) {
             fields.add([name: "Started By", value: startedByCause, inline: true])
         }
