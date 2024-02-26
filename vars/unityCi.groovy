@@ -224,8 +224,7 @@ def discordNotify(def params) {
 }
 
 def toPrettySize(def sizeInBytes) {
-    def B = 1024
-    def KB = 1024 * B
+    def KB = 1024
     def MB = 1024 * KB
 
     def wholeMb = (int) (sizeInBytes / MB)
