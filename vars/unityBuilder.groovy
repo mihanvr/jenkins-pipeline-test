@@ -2,7 +2,7 @@ def build(def script) {
     def options = script.options
     def env = script?.env
     def autoDetectUnityVersion = (options.autoDetectUnityVersion ?: env?.AUTO_DETECT_UNITY_VERSION ?: true).toBoolean()
-    def unityHubPath = options.unityHubPath ?: env?.UNITY_HUB_PATH
+    def unityHubPath = getUnityHubPath(script)
     def projectDir = options.projectDir ?: env?.PROJECT_DIR ?: '.'
     def scenes = options.scenes
     def buildTarget = options.buildTarget ?: env?.BUILD_TARGET
@@ -28,6 +28,7 @@ def build(def script) {
 
     unityHub.init(unityHubPath)
     def unityPath = unityHub.getUnityPath(unityVersion, unityRevision, false)
+    unityHub.installUnityModules(unityVersion, getRequiredUnityModules(buildTarget))
     unity.init(unityPath)
 
     def buildOptions = [:]
@@ -74,6 +75,43 @@ def build(def script) {
     ]
 }
 
+def getRequiredUnityModules(String buildTarget) {
+    switch (buildTarget) {
+        case "Win64":
+        case "Win":
+            return ['windows']
+        case "WebGL":
+            return ['webgl']
+        case "Android":
+            return ['android', 'android-open-jdk', 'android-sdk-ndk-tools']
+        case "iOS":
+            return ['ios']
+        case "Standalone":
+        case "Linux64":
+            break
+    }
+    return []
+}
+
+def getUnityHubPath(def script) {
+    def path = script.options?.unityHubPath ?: script.env?.UNITY_HUB_PATH
+    if (path) {
+        if (fileExists(path)) return path
+        error("Unity hub not found at defined path: ${path}")
+    }
+
+    if (isUnix()) {
+        def uname = sh script: 'uname', returnStdout: true
+        if (uname.startsWith("Darwin")) {
+            path = '/Applications/Unity Hub.app'
+        }
+    } else {
+        path = 'C:\\Program Files\\Unity Hub\\Unity Hub.exe'
+    }
+    if (fileExists(path)) return path
+    error("Unity hub not found")
+}
+
 def processArtifacts(def script) {
     def options = script.options
     def env = script?.env
@@ -84,7 +122,6 @@ def processArtifacts(def script) {
         case 'standalonewindows64':
         case 'standalonelinux64':
         case 'webgl':
-
             def archiveFileName = "${buildTag}.zip"
             zip zipFile: archiveFileName, dir: outputPath, overwrite: true, archive: true
             break

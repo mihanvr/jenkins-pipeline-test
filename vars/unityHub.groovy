@@ -95,6 +95,11 @@ def getUnityPath(String editorVersion, String editorVersionRevision = '', boolea
     return editorVersionPath
 }
 
+def installUnityModules(String editorVersion, List<String> modules) {
+    if (modules.size() == 0) return
+    exec label: 'Install required editor modules', script: "\"${UnityHubConfiguration.unityHubPath}\" -- --headless install-modules --version ${editorVersion} -m ${String.join(' ', modules)}"
+}
+
 private def ensureUnityHubExecutableExists(String unityHubPath) {
     if (!fileExists(unityHubPath)) {
         error("Unity Hub executable not found at specified path! (${unityHubPath})");
