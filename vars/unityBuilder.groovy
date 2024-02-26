@@ -78,11 +78,11 @@ def build(def script) {
 def getRequiredUnityModules(String buildTarget) {
     switch (buildTarget?.toLowerCase()) {
         case "standalonewindows64":
-            return ['windows']
+            return ['windows-mono']
         case "webgl":
             return ['webgl']
         case "android":
-            return ['android', 'android-open-jdk', 'android-sdk-ndk-tools']
+            return ['android']
         case "ios":
             return ['ios']
     }
