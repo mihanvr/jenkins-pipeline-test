@@ -195,18 +195,15 @@ def discordNotify(def params) {
     fields.add([name: "Job", value: "[${jobName}](${jobUrl})", inline: true])
     fields.add([name: "Platform", value: buildPlatform, inline: true])
 
-    try {
-        def bc = script.currentBuild?.getBuildCauses()
-        for (int i = 0; i < bc.size(); i++) {
-            echo "${bc.shortDescription}"
+    String buildCause = script.currentBuild?.buildCauses?.collect { it.shortDescription }?.find { it != null }
+    if (buildCause != null) {
+        if (buildCause.toLowerCase().startsWith("started by ")) {
+            buildCause = buildCause.substring("started by ".length())
         }
+    }
 
-        def startedByCause = script.currentBuild?.getBuildCauses('hudson.model.CauseAction')?.shortDescription?.get(0)
-        if (startedByCause) {
-            fields.add([name: "Started By", value: startedByCause, inline: true])
-        }
-    } catch (Exception e) {
-        log.error(e.toString())
+    if (buildCause) {
+        fields.add([name: "Started By", value: buildCause, inline: true])
     }
 
     def gitBranch = script.scm?.arguments?.branches?.get(0)?.name ?: options?.gitBranch ?: env?.GIT_BRANCH
