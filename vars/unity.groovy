@@ -50,7 +50,7 @@ def execute(
         writeFile file: 'JenkinsBuilder.cs', text: request
     }
 
-    def unityParams = "\"${UnityConfiguration.unityPath}\" -batchmode -projectPath \"${projectDir}\" ${noGraphics ? '-nographics' : ''} ${methodToExecute ? "-executeMethod ${methodToExecute}" : ''} ${buildTargetStr} ${additionalParameters} -logFile \"${logFile}\" -quit"
+    def unityParams = "\"${UnityConfiguration.unityPath}\" -batchmode -skipMissingProjectID -skipMissingUPID -projectPath \"${projectDir}\" ${noGraphics ? '-nographics' : ''} ${methodToExecute ? "-executeMethod ${methodToExecute}" : ''} ${buildTargetStr} ${additionalParameters} -logFile \"${logFile}\" -quit"
     int exitCode
     if (isUnix()) {
         exitCode = sh label: 'Execute Unity Method', returnStatus: true, script: unityParams
