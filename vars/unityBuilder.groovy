@@ -75,7 +75,7 @@ def build(def script) {
     ]
             .findAll { it.value != null }
             .collect { "${it.key}=${it.value}" }
-    writeFile('.ci.env', String.join("\n", ciEnv))
+    writeFile file: '.ci.env', text: String.join("\n", ciEnv)
 
     additionalParameters += ' -ciOptionsFile ci_build_options.json'
     unity.execute(projectDir: projectDir, methodToExecute: 'JenkinsBuilder.Build', buildTarget: buildTarget, noGraphics: serverMode, additionalParameters: additionalParameters)
