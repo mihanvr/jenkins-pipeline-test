@@ -52,10 +52,10 @@ def build(def script) {
         buildOptions.enableHeadlessMode = true
         buildOptions.buildSubTarget = 'Server'
     }
-    if (options.android){
+    if (options.android) {
         buildOptions.android = options.android
     }
-    if (options.webgl){
+    if (options.webgl) {
         buildOptions.webgl = options.webgl
     }
 
@@ -65,6 +65,15 @@ def build(def script) {
     writeJSON file: 'ci_build_options.json', json: buildOptions
     echo 'ci_build_options.json'
     echo writeJSON(json: buildOptions, returnText: true)
+
+    def ciEnv = [
+            "BUILD_NUMBER": env?.BUILD_NUMBER,
+            "JOB_NAME"    : env?.JOB_NAME,
+            "BUILD_TAG"   : env?.BUILD_TAG
+    ]
+            .findAll { it.value != null }
+            .collect { "${it.key}=${it.value}" }
+    writeFile('.ci.env', String.join("\n", ciEnv))
 
     additionalParameters += ' -ciOptionsFile ci_build_options.json'
     unity.execute(projectDir: projectDir, methodToExecute: 'JenkinsBuilder.Build', buildTarget: buildTarget, noGraphics: serverMode, additionalParameters: additionalParameters)
@@ -158,7 +167,8 @@ def getLocationPathName(def script) {
         case 'standalonelinux64':
             def executableName = options.executableName ?: env?.EXECUTABLE_NAME ?: 'app'
             def ext = buildTarget == 'StandaloneWindows64' ? '.exe' : ''
-            return "${buildOutputPath}/${executableName}${ext}" case 'webgl':
+            return "${buildOutputPath}/${executableName}${ext}"
+        case 'webgl':
             return buildOutputPath
         case 'android':
             def ext = options.buildAppBundle ? '.aab' : '.apk'
