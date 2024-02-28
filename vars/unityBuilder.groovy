@@ -13,6 +13,8 @@ def build(def script) {
     def postBuildMethod = options.postBuildMethod ?: env?.POST_BUILD_METHOD
     def outputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
 
+    extraScriptingDefines = (extraScriptingDefines ?: []) + ["CI_BUILD"]
+
     def locationPathName = getLocationPathName(script)
 
     String unityVersion
