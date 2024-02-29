@@ -95,7 +95,7 @@ public static class JenkinsBuilder
         var sb = new StringBuilder();
         sb.AppendLine("buildPlayerOptions:");
         sb.Append("scenes: ").AppendLine(string.Join(", ", buildPlayerOptions.scenes));
-        sb.Append("extraScriptingDefines: ").AppendLine(string.Join(", ", buildPlayerOptions.scenes));
+        sb.Append("extraScriptingDefines: ").AppendLine(string.Join(", ", buildPlayerOptions.extraScriptingDefines));
         sb.Append("options: ").AppendLine(buildPlayerOptions.options.ToString());
         sb.Append("locationPathName: ").AppendLine(string.Join(", ", buildPlayerOptions.locationPathName));
         sb.Append("target: ").AppendLine(string.Join(", ", buildPlayerOptions.target));
