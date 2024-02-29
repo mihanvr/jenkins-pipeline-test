@@ -77,6 +77,11 @@ def build(def script) {
             .collect { "${it.key}=${it.value}" }
     writeFile file: '.ci.env', text: String.join("\n", ciEnv)
 
+    if (extraScriptingDefines) {
+        def cscRspContent = extraScriptingDefines.collect {"-define:${it}"}
+        writeFile file: "${projectDir}/Assets/csc.rsp", text: String.join("\n", cscRspContent)
+    }
+
     additionalParameters += ' -ciOptionsFile ci_build_options.json'
     unity.execute(projectDir: projectDir, methodToExecute: 'JenkinsBuilder.Build', buildTarget: buildTarget, noGraphics: serverMode, additionalParameters: additionalParameters)
 
