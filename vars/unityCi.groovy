@@ -65,52 +65,55 @@ def defaultPipeline(def script) {
 }
 
 def postWebhook(def script) {
-    def changeLog = getChangeLogFromLatestSuccess(script)
-    def artifacts = getBuildArtifacts(script)
     def env = script.env
     def options = script.options
-    def buildTarget = options?.buildTarget ?: env?.BUILD_TARGET
-    def gitBranch = script.scm?.arguments?.branches?.get(0)?.name ?: options?.gitBranch ?: env?.GIT_BRANCH
-
-    def jsonBody = [
-            result               : currentBuild.result,
-            project_name         : currentBuild.projectName,
-            git_branch           : gitBranch,
-            git_commit           : env.GIT_COMMIT,
-            build_duration_millis: currentBuild.duration,
-            build_duration       : currentBuild.durationString,
-            build_id             : env.BUILD_ID,
-            build_number         : env.BUILD_NUMBER,
-            build_tag            : env.BUILD_TAG,
-            build_url            : env.BUILD_URL,
-            build_target         : buildTarget,
-            job_base_name        : env.JOB_BASE_NAME,
-            job_name             : env.JOB_NAME,
-            job_url              : env.JOB_URL,
-            node_name            : env.BUILD_NODE_NAME,
-            change_log           : changeLog,
-            artifacts            : artifacts
-    ]
-    def json = writeJSON returnText: true, json: jsonBody
-    echo "Post body: ${json}"
 
     def webhookUrl = options?.webhookUrl ?: env?.WEBHOOK_URL
 
     if (/*currentBuild.result == 'SUCCESS' && */ webhookUrl) {
-        def customHeaders = []
+        stage("Post Webhook") {
+            def changeLog = getChangeLogFromLatestSuccess(script)
+            def artifacts = getBuildArtifacts(script)
+            def buildTarget = options?.buildTarget ?: env?.BUILD_TARGET
+            def gitBranch = script.scm?.arguments?.branches?.get(0)?.name ?: options?.gitBranch ?: env?.GIT_BRANCH
 
-        def xApiKey = options?.xApiKey ?: env?.X_API_KEY
-        if (xApiKey) {
-            customHeaders.add([name: 'X-API-KEY', value: xApiKey])
-        } else {
-            def webhookCredentials = options?.webhookCredentials ?: env?.WEBHOOK_CREDENTIALS
-            if (webhookCredentials) {
-                withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKeyCred')]) {
-                    customHeaders.add([name: 'X-API-KEY', value: "${xApiKeyCred}"])
+            def jsonBody = [
+                    result               : currentBuild.result,
+                    project_name         : currentBuild.projectName,
+                    git_branch           : gitBranch,
+                    git_commit           : env.GIT_COMMIT,
+                    build_duration_millis: currentBuild.duration,
+                    build_duration       : currentBuild.durationString,
+                    build_id             : env.BUILD_ID,
+                    build_number         : env.BUILD_NUMBER,
+                    build_tag            : env.BUILD_TAG,
+                    build_url            : env.BUILD_URL,
+                    build_target         : buildTarget,
+                    job_base_name        : env.JOB_BASE_NAME,
+                    job_name             : env.JOB_NAME,
+                    job_url              : env.JOB_URL,
+                    node_name            : env.BUILD_NODE_NAME,
+                    change_log           : changeLog,
+                    artifacts            : artifacts
+            ]
+            def json = writeJSON returnText: true, json: jsonBody
+            echo "Post body: ${json}"
+
+            def customHeaders = []
+
+            def xApiKey = options?.xApiKey ?: env?.X_API_KEY
+            if (xApiKey) {
+                customHeaders.add([name: 'X-API-KEY', value: xApiKey])
+            } else {
+                def webhookCredentials = options?.webhookCredentials ?: env?.WEBHOOK_CREDENTIALS
+                if (webhookCredentials) {
+                    withCredentials([string(credentialsId: webhookCredentials, variable: 'xApiKeyCred')]) {
+                        customHeaders.add([name: 'X-API-KEY', value: "${xApiKeyCred}"])
+                    }
                 }
             }
+            httpRequest consoleLogResponseBody: true, contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, customHeaders: customHeaders, validResponseCodes: '100:599'
         }
-        httpRequest consoleLogResponseBody: true, contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, customHeaders: customHeaders, validResponseCodes: '100:599'
     }
 }
 
