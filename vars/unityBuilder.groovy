@@ -78,7 +78,7 @@ def build(def script) {
     writeFile file: '.ci.env', text: String.join("\n", ciEnv)
 
     if (extraScriptingDefines) {
-        def cscRspContent = extraScriptingDefines.collect {"-define:${it}"}
+        def cscRspContent = extraScriptingDefines.collect { "-define:${it}" }
         writeFile file: "${projectDir}/Assets/csc.rsp", text: String.join("\n", cscRspContent)
     }
 
@@ -130,16 +130,29 @@ def processArtifacts(def script) {
     def buildTag = options.buildTag ?: env?.BUILD_TAG
     def outputPath = options.buildOutputPath ?: env?.BUILD_OUTPUT_PATH
     def buildTarget = options.buildTarget ?: env?.BUILD_TARGET
+    def keepArtifacts = options.keepArtifacts ?: env?.KEEP_ARTIFACTS ?: false
+    def keepBuildDir = options.keepBuildDir ?: env?.KEEP_BUILD_DIR ?: false
     switch (buildTarget.toLowerCase()) {
         case 'standalonewindows64':
         case 'standalonelinux64':
         case 'webgl':
             def archiveFileName = "${buildTag}.zip"
             zip zipFile: archiveFileName, dir: outputPath, overwrite: true, archive: true
+            if (!keepArtifacts) {
+                file.deteteFile(archiveFileName)
+            }
+            if (!keepBuildDir) {
+                dir(outputPath) {
+                    deleteDir()
+                }
+            }
             break
         case 'android':
             def filePath = getLocationPathName(options)
             archiveArtifacts artifacts: filePath
+            if (!keepArtifacts) {
+                file.deteteFile(filePath)
+            }
             break
         default:
             break
