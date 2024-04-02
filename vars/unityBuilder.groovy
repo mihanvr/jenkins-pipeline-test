@@ -151,7 +151,7 @@ def processArtifacts(def script) {
             def filePath = getLocationPathName(options)
             archiveArtifacts artifacts: filePath
             if (!keepArtifacts) {
-                file.deteteFile(filePath)
+                file.deleteFile(filePath)
             }
             break
         default:
