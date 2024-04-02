@@ -139,7 +139,7 @@ def processArtifacts(def script) {
             def archiveFileName = "${buildTag}.zip"
             zip zipFile: archiveFileName, dir: outputPath, overwrite: true, archive: true
             if (!keepArtifacts) {
-                file.deteteFile(archiveFileName)
+                file.deleteFile(archiveFileName)
             }
             if (!keepBuildDir) {
                 dir(outputPath) {
