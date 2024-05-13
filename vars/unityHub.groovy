@@ -12,7 +12,7 @@ availableModules = [
         'Linux Build Support (Mono)'              : 'linux-mono',
         'Linux Build Support (IL2CPP)'            : 'linux-il2cpp',
         'Mac Build Support (Mono)'                : 'mac-mono',
-        'Windows Build Support (IL2CPP)'          : 'windows-il2cpp',
+
         'Universal Windows Platform Build Support': 'universal-windows-platform',
         'UWP Build Support (IL2CPP)'              : 'uwp-il2cpp',
         'UWP Build Support (.NET)'                : 'uwp-.net',
@@ -97,7 +97,7 @@ def getUnityPath(String editorVersion, String editorVersionRevision = '', boolea
 
 def installUnityModules(String editorVersion, List<String> modules) {
     if (modules.size() == 0) return
-    exec label: 'Install required editor modules', script: "\"${UnityHubConfiguration.unityHubPath}\" -- --headless install-modules --version ${editorVersion} -m ${String.join(' ', modules)} --cm"
+    exec label: 'Install required editor modules', script: "\"${UnityHubConfiguration.unityHubPath}\" -- --headless install-modules --version ${editorVersion} -m ${String.join(' ', modules)} --cm --errors"
 }
 
 private def ensureUnityHubExecutableExists(String unityHubPath) {
