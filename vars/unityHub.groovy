@@ -97,7 +97,7 @@ def getUnityPath(String editorVersion, String editorVersionRevision = '', boolea
 
 def installUnityModules(String editorVersion, List<String> modules) {
     if (modules.size() == 0) return
-    exec label: 'Install required editor modules', script: "\"${UnityHubConfiguration.unityHubPath}\" -- --headless install-modules --version ${editorVersion} -m ${String.join(' ', modules)} --cm --errors"
+    exec label: 'Install required editor modules', returnStatus: true, script: "\"${UnityHubConfiguration.unityHubPath}\" -- --headless install-modules --version ${editorVersion} -m ${String.join(' ', modules)} --cm"
 }
 
 private def ensureUnityHubExecutableExists(String unityHubPath) {
