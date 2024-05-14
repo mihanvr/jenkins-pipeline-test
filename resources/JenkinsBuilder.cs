@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using UnityEditor.Build.Reporting;
 
 public static class JenkinsBuilder
 {
@@ -76,7 +77,8 @@ public static class JenkinsBuilder
         TryRunMethod(options.preBuildMethod);
         LogBuildPlayerOptions(buildPlayerOptions);
         var buildPlayer = BuildPipeline.BuildPlayer(buildPlayerOptions);
-        if (buildPlayer.summary.totalErrors > 0)
+        Debug.Log($"Build completed with result: {buildPlayer.summary.result}");
+        if (buildPlayer.summary.result != BuildResult.Succeeded)
         {
             if (TryGetCommandLineArgValue("batchmode", out _))
             {
