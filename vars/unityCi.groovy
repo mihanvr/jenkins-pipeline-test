@@ -30,9 +30,7 @@ def defaultPipeline(def script) {
     def nodeLabel = options?.nodeLabel ?: options.env?.NODE_LABEL ?: "unity"
     node(nodeLabel) {
         env.BUILD_NODE_NAME = env.NODE_NAME
-        node('master') {
-            notify(script: script, buildStatus: "Started")
-        }
+        notify(script: script, buildStatus: "Started")
         this.options = options
         stage("Checkout") {
             def scm
@@ -231,7 +229,16 @@ def discordNotify(def params) {
 
     def json = writeJSON(json: discordContent, returnText: true)
     echo json
-    httpRequest contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, validResponseCodes: '100:599'
+    try {
+        httpRequest contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, validResponseCodes: '100:599'
+    } catch (SocketException e) {
+        if (e.message.contains("timed out")) {
+            log.error(e.message)
+        } else {
+            throw e
+        }
+    }
+
 }
 
 def toPrettySize(def sizeInBytes) {
