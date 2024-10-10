@@ -30,7 +30,9 @@ def defaultPipeline(def script) {
     def nodeLabel = options?.nodeLabel ?: options.env?.NODE_LABEL ?: "unity"
     node(nodeLabel) {
         env.BUILD_NODE_NAME = env.NODE_NAME
-        notify(script: script, buildStatus: "Started")
+        node('master') {
+            notify(script: script, buildStatus: "Started")
+        }
         this.options = options
         stage("Checkout") {
             def scm
