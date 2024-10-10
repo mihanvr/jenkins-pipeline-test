@@ -232,7 +232,8 @@ def discordNotify(def params) {
     try {
         httpRequest contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, validResponseCodes: '100:599'
     } catch (Exception e) {
-        if (e.message.contains("timed out")) {
+        echo e.class.canonicalName
+        if (e.message?.contains("timed out")) {
             log.error(e.message)
         } else {
             throw e
