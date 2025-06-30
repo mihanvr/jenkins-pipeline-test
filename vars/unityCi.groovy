@@ -45,9 +45,19 @@ def defaultPipeline(def script) {
                     userRemoteConfigs.credentialsId = gitCredentials
                 }
 
+                // Создаем список extensions с поддержкой LFS и Submodules
+                def extensions = [
+                        [$class: 'GitLFSPull'], // Поддержка Git LFS
+                        [$class             : 'SubmoduleOption',
+                         disableSubmodules  : false, // Включаем подмодули
+                         parentCredentials  : true, // Используем те же учетные данные для подмодулей
+                         recursiveSubmodules: true, // Рекурсивно обновляем подмодули
+                         trackingSubmodules : false] // Не отслеживаем ветки подмодулей
+                ]
+
                 scm = scmGit(
                         branches: [[name: gitBranch]],
-                        extensions: [lfs()],
+                        extensions: extensions,
                         userRemoteConfigs: [userRemoteConfigs]
                 )
             }
