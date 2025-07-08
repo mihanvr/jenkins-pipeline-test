@@ -142,11 +142,8 @@ def processArtifacts(def script) {
             archiveArtifacts artifacts: archiveFileName  // Явно архивируем
             if (!keepArtifacts) {
                 log.info("delete uploaded artifact ${outputPath}")
-                // Принудительное удаление через shell
-                if (isUnix()) {
-                    sh "rm -f '${archiveFileName}' || echo 'Warning: Failed to delete'"
-                } else {
-                    bat "del /F /Q \"${archiveFileName}\" || echo Warning: Failed to delete"
+                if (!file.deleteFile(archiveFileName)) {
+                    log.warn("delete failed: ${archiveFileName}")
                 }
             }
             if (!keepBuildDir) {
