@@ -142,6 +142,7 @@ def processArtifacts(def script) {
             if (!keepArtifacts) {
                 log.info("delete uploaded artifact ${outputPath}")
                 if (!file.deleteFile(archiveFileName)) {
+                    sleep(time: 5, unit: 'SECONDS')
                     log.warn("delete failed: ${archiveFileName}")
                 }
             }
