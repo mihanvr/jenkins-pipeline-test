@@ -138,11 +138,11 @@ def processArtifacts(def script) {
         case 'webgl':
             def archiveFileName = "${buildTag}.zip"
             log.info("create artifact ${outputPath} from directory ${outputPath}")
-            zip zipFile: archiveFileName, dir: outputPath, overwrite: true, archive: true
+            zip zipFile: archiveFileName, dir: outputPath, overwrite: true, archive: false
+            archiveArtifacts artifacts: archiveFileName  // Явно архивируем
             if (!keepArtifacts) {
                 log.info("delete uploaded artifact ${outputPath}")
                 if (!file.deleteFile(archiveFileName)) {
-                    sleep(time: 5, unit: 'SECONDS')
                     log.warn("delete failed: ${archiveFileName}")
                 }
             }
