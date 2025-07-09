@@ -154,7 +154,7 @@ def processArtifacts(def script) {
             }
             break
         case 'android':
-            def filePath = getLocationPathName(options)
+            def filePath = getLocationPathName(script)
             archiveArtifacts artifacts: filePath
             if (!keepArtifacts) {
                 log.info("delete uploaded artifact ${filePath}")
