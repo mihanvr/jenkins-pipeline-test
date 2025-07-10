@@ -137,19 +137,13 @@ def processArtifacts(def script) {
         case 'standalonelinux64':
         case 'webgl':
             def archiveFileName = "${buildTag}.zip"
-            log.info("create artifact ${outputPath} from directory ${outputPath}")
+            log.info("create artifact ${archiveFileName} from directory ${outputPath}")
             zip zipFile: archiveFileName, dir: outputPath, overwrite: true, archive: false
             archiveArtifacts artifacts: archiveFileName  // Явно архивируем
             if (!keepArtifacts) {
                 log.info("delete uploaded artifact ${outputPath}")
                 if (!file.deleteFile(archiveFileName)) {
                     log.warn("delete failed: ${archiveFileName}")
-                }
-            }
-            if (!keepBuildDir) {
-                log.info("delete build dir ${outputPath}")
-                dir(outputPath) {
-                    deleteDir()
                 }
             }
             break
@@ -165,6 +159,13 @@ def processArtifacts(def script) {
             break
         default:
             break
+    }
+
+    if (!keepBuildDir && outputPath?.trim()) {
+        log.info("delete build dir ${outputPath}")
+        dir(outputPath) {
+            deleteDir()
+        }
     }
 
 
