@@ -33,6 +33,13 @@ def defaultPipeline(def script) {
         notify(script: script, buildStatus: "Started")
         this.options = options
         stage("Checkout") {
+            if (fileExists('.git')) {
+                exec label: "Clean", script:'''
+                    git clean -fd
+                    git submodule foreach --recursive git clean -fd
+                    '''
+            }
+
             def scm
             if (script.scm) {
                 scm = script.scm
