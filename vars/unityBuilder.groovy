@@ -60,6 +60,9 @@ def build(def script) {
     if (options.webgl) {
         buildOptions.webgl = options.webgl
     }
+    if (options.hideUnityLogo) {
+        buildOptions.hideUnityLogo = options.hideUnityLogo
+    }
 
     dir('Assets/Editor') {
         writeFile file: 'JenkinsBuilder.cs', text: libraryResource('JenkinsBuilder.cs')

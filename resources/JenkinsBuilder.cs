@@ -205,6 +205,15 @@ public static class JenkinsBuilder
         {
             buildPlayerOptions.locationPathName = options.locationPathName;
         }
+
+        if (options.hideUnityLogo)
+        {
+            if (Application.HasProLicense())
+            {
+                PlayerSettings.SplashScreen.show = false;
+                PlayerSettings.SplashScreen.showUnityLogo = false;
+            }
+        }
     }
 
     private static BuildTargetGroup GetTargetGroupFromTarget(BuildTarget target)
@@ -242,6 +251,8 @@ public static class JenkinsBuilder
         public string postBuildMethod;
         public AndroidOptions android;
         public WebGLOptions webgl;
+
+        public bool hideUnityLogo = true;
 
         [Serializable]
         public class AndroidOptions
