@@ -11,6 +11,7 @@ public static class JenkinsBuilder
 {
     public const string BuildOptionsJsonFilePath = "ci_build_options.json";
 
+    [MenuItem("Tools/Build CI")]
     public static void Build()
     {
         var options = new CIBuildOptions();
