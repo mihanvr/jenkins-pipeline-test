@@ -167,6 +167,7 @@ def getChangeLog(def passedBuilds) {
     for (int x = 0; x < passedBuilds.size(); x++) {
         def currentBuild = passedBuilds[x]
         def changeLogSets = currentBuild.rawBuild.changeSets
+        println("changeLogSets: $changeLogSets")
         for (int i = 0; i < changeLogSets.size(); i++) {
             def entries = changeLogSets[i].items
             for (int j = 0; j < entries.length; j++) {
