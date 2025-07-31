@@ -171,8 +171,7 @@ def getChangeLog(def passedBuilds) {
             def entries = changeLogSets[i].items
             for (int j = 0; j < entries.length; j++) {
                 def entry = entries[j]
-                println("changeSets[$i].item[$j]: $entry")
-                log += "* ${entry.msg} by ${entry.author}\\n"
+                log += "* ${entry.comment} by ${entry.author}\\n"
             }
         }
     }
