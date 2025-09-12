@@ -231,6 +231,11 @@ def discordNotify(def params) {
     if (gitBranch) {
         fields.add([name: "Branch", value: gitBranch, inline: true])
     }
+    def gitCommit = env?.GIT_COMMIT
+    if (gitCommit) {
+        def shortCommitHash = gitCommit.substring(0, 7)
+        fields.add([name: "Commit", value: shortCommitHash, inline: true])
+    }
     def buildNodeName = env?.BUILD_NODE_NAME
     if (buildNodeName) {
         fields.add([name: "Node", value: buildNodeName, inline: true])
