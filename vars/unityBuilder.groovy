@@ -139,6 +139,7 @@ def processArtifacts(def script) {
         case 'standalonewindows64':
         case 'standalonelinux64':
         case 'webgl':
+        case 'ios':
             def archiveFileName = "${buildTag}.zip"
             log.info("create artifact ${archiveFileName} from directory ${outputPath}")
             zip zipFile: archiveFileName, dir: outputPath, overwrite: true, archive: false
@@ -207,6 +208,8 @@ def getLocationPathName(def script) {
             def ext = options.buildAppBundle ? '.aab' : '.apk'
             def buildTag = options.buildTag ?: env?.BUILD_TAG
             return "${buildOutputPath}/${buildTag}${ext}"
+        case 'ios':
+            return buildOutputPath
         default:
             error("buildTarget ${buildTarget} not supported")
             break
