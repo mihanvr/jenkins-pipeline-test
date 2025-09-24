@@ -33,11 +33,17 @@ def defaultPipeline(def script) {
         notify(script: script, buildStatus: "Started")
         this.options = options
         stage("Checkout") {
+            def clearWorkspace = (env.CLEAR_WORKSPACE ?: "false") == "true"
             if (fileExists('.git')) {
-                exec label: "Clean", script:'''
-                    git clean -fd
+                def flagX = clearWorkspace ? "x" : "" // remove files that are ignored by Git (e.g., specified in .gitignore)
+                exec label: "Clean", script:"""
+                    git clean -fd${flagX}
                     git submodule foreach --recursive git clean -fd
-                    '''
+                    """
+            } else {
+                if (clearWorkspace) {
+                    cleanWs()
+                }
             }
 
             def scm
