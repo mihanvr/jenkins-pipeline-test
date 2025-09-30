@@ -149,7 +149,12 @@ def getBuildArtifacts(def script) {
     def env = script.env ?: script.script?.env
     for (int i = 0; i < buildArtifacts.size(); i++) {
         def file = buildArtifacts[i]
-        artifacts.add([size: "${file.fileSize}", name: "${file.fileName}", href: "${env.BUILD_URL}artifact/${file.fileName}"])
+        def artifactPath = file.relativePath
+        artifacts.add([
+                size: "${file.fileSize}",
+                name: "${file.fileName}",
+                href: "${env.BUILD_URL}artifact/${artifactPath}"
+        ])
     }
     return artifacts
 }
