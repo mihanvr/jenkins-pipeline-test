@@ -78,13 +78,121 @@ def defaultPipeline(def script) {
             env.GIT_COMMIT = scmVars.GIT_COMMIT
         }
 
+        stage("Prepare Workspace") {
+            prepareWorkspaceWithLibraryCache(script)
+        }
+
         stage("Build") {
             unityBuilder.build(this)
         }
+
+        stage("Create Library Cache") {
+            createLibraryCacheIfEnabled(script)
+        }
+
         stage("Zip") {
             unityBuilder.processArtifacts(this)
         }
     }
+}
+
+def prepareWorkspaceWithLibraryCache(def script) {
+    def options = script.options
+    def useLibraryCache = options?.useLibraryCache ?: (env.USE_LIBRARY_CACHE ?: "false") == "true"
+
+    if (!useLibraryCache) {
+        echo "Library cache is disabled"
+        return
+    }
+
+    def cacheName = getLibraryCacheName(script)
+    def localCachePath = ".library_cache/${cacheName}.zip"
+
+    // Пытаемся получить кэш из предыдущей успешной сборки
+    try {
+        copyArtifacts(
+                projectName: env.JOB_NAME,
+                selector: script.lastSuccessful(),
+                filter: ".library_cache/${cacheName}.zip",
+                target: ".",
+                flatten: true
+        )
+
+        if (fileExists(localCachePath)) {
+            echo "Found library cache from previous build: ${localCachePath}"
+            restoreLibraryFromCache(script, localCachePath)
+        } else {
+            echo "No library cache found from previous builds, starting fresh build"
+        }
+    } catch (Exception e) {
+        echo "No previous cache found or error occurred: ${e.getMessage()}"
+        echo "Starting fresh build without cache"
+    }
+}
+
+def restoreLibraryFromCache(def script, def cachePath) {
+    try {
+        // Удаляем существующую папку Library, если она есть
+        if (fileExists('Library')) {
+            dir('Library') {
+                deleteDir()
+            }
+        }
+
+        // Создаем директорию и распаковываем кэш
+        unzip cachePath, dir: '.'
+        echo "Library cache restored successfully"
+    } catch (Exception e) {
+        echo "Failed to restore library cache: ${e.getMessage()}"
+        // Продолжаем выполнение, даже если восстановление кэша не удалось
+    }
+}
+
+def createLibraryCacheIfEnabled(def script) {
+    def options = script.options
+    def useLibraryCache = options?.useLibraryCache ?: (env.USE_LIBRARY_CACHE ?: "false") == "true"
+
+    if (!useLibraryCache) {
+        echo "Library cache creation is disabled"
+        return
+    }
+
+    if (!fileExists('Library')) {
+        echo "No Library folder found to cache"
+        return
+    }
+
+    def cacheName = getLibraryCacheName(script)
+    def localCachePath = ".library_cache/${cacheName}.zip"
+
+    try {
+        // Архивируем папку Library
+        zip zipFile: localCachePath, dir: 'Library', overwrite: true, archive: false
+
+        // Удаляем папку Library из workspace
+        dir('Library') {
+            deleteDir()
+        }
+
+        echo "Library cache created at: ${localCachePath}"
+
+        // Архивируем кэш как артефакт сборки
+        archiveArtifacts artifacts: ".library_cache/${cacheName}.zip"
+
+    } catch (Exception e) {
+        echo "Failed to create library cache: ${e.getMessage()}"
+        // Не прерываем сборку, если создание кэша не удалось
+    }
+}
+
+def getLibraryCacheName(def script) {
+    def env = script.env
+    def jobName = env?.JOB_NAME ?: "unknown_job"
+
+    // Очищаем имя джобы от недопустимых символов для имени файла
+    def cleanJobName = jobName.replaceAll('[^a-zA-Z0-9_-]', '_')
+
+    return "library_cache_${cleanJobName}"
 }
 
 def postWebhook(def script) {
@@ -286,7 +394,7 @@ def toPrettySize(def sizeInBytes) {
     }
     def wholeKb = (int) (sizeInBytes / KB)
     if (wholeKb > 0) {
-        return "${wholeMb} KB"
+        return "${wholeKb} KB"
     }
     return "${sizeInBytes} B"
 }
