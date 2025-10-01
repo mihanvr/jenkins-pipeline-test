@@ -33,12 +33,13 @@ def defaultPipeline(def script) {
         notify(script: script, buildStatus: "Started")
         this.options = options
         stage("Checkout") {
-            def clearWorkspace = (env.CLEAR_WORKSPACE ?: "false") == "true"
+            def clearWorkspace = (env.CLEAR_WORKSPACE_BEFORE ?: "false") == "true"
             if (fileExists('.git')) {
-                def flagX = clearWorkspace ? "x" : "" // remove files that are ignored by Git (e.g., specified in .gitignore)
-                exec label: "Clean", script:"""
+                def flagX = clearWorkspace ? "x" : ""
+                // remove files that are ignored by Git (e.g., specified in .gitignore)
+                exec label: "Clean", script: """
                     git clean -fd${flagX}
-                    git submodule foreach --recursive git clean -fd
+                    git submodule foreach --recursive git clean -fd${flagX}
                     """
             } else {
                 if (clearWorkspace) {
@@ -93,15 +94,28 @@ def defaultPipeline(def script) {
         stage("Zip") {
             unityBuilder.processArtifacts(this)
         }
+
+        stage("Clear") {
+            afterBuild()
+        }
+    }
+}
+
+def afterBuild(def script) {
+    def clearWorkspaceAfter = (env.CLEAR_WORKSPACE_AFTER ?: "true") == "true"
+    if (clearWorkspaceAfter) {
+        exec label: "Clean", script: """
+                    git clean -fdx
+                    git submodule foreach --recursive git clean -fdx
+                    """
     }
 }
 
 def prepareWorkspaceWithLibraryCache(def script) {
-    def options = script.options
-    def useLibraryCache = options?.useLibraryCache ?: (env.USE_LIBRARY_CACHE ?: "false") == "true"
+    def restoreLibraryCache = (env.RESTORE_LIBRARY_CACHE ?: "true") == "true"
 
-    if (!useLibraryCache) {
-        echo "Library cache is disabled"
+    if (!restoreLibraryCache) {
+        echo "Restore library cache is disabled"
         return
     }
 
@@ -149,10 +163,9 @@ def restoreLibraryFromCache(def script, def cachePath) {
 }
 
 def createLibraryCacheIfEnabled(def script) {
-    def options = script.options
-    def useLibraryCache = options?.useLibraryCache ?: (env.USE_LIBRARY_CACHE ?: "false") == "true"
+    def saveLibraryCache = (env.SAVE_LIBRARY_CACHE ?: "true") == "true"
 
-    if (!useLibraryCache) {
+    if (!saveLibraryCache) {
         echo "Library cache creation is disabled"
         return
     }
