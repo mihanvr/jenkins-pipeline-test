@@ -8,7 +8,6 @@ def pipeline(def script) {
         defaultPipeline(script)
         notify(script: script, buildStatus: "Success", fields: [])
         script.currentBuild.result = 'SUCCESS'
-        postWebhook(script)
     } catch (Exception e) {
         try {
             if (e instanceof InterruptedException) {
@@ -87,12 +86,14 @@ def defaultPipeline(def script) {
             unityBuilder.build(this)
         }
 
-        stage("Create Library Cache") {
-            createLibraryCacheIfEnabled(script)
-        }
-
         stage("Zip") {
             unityBuilder.processArtifacts(this)
+        }
+
+        postWebhook(script)
+
+        stage("Create Library Cache") {
+            createLibraryCacheIfEnabled(script)
         }
 
         stage("Clear") {
