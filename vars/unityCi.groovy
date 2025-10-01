@@ -119,15 +119,14 @@ def prepareWorkspaceWithLibraryCache(def script) {
         return
     }
 
-    def cacheName = getLibraryCacheName(script)
-    def localCachePath = ".library_cache/${cacheName}.zip"
+    def localCachePath = getLibraryCachePath(script)
 
     // Пытаемся получить кэш из предыдущей успешной сборки
     try {
         copyArtifacts(
                 projectName: env.JOB_NAME,
                 selector: script.lastSuccessful(),
-                filter: ".library_cache/${cacheName}.zip",
+                filter: localCachePath,
                 target: ".",
                 flatten: true
         )
@@ -175,8 +174,7 @@ def createLibraryCacheIfEnabled(def script) {
         return
     }
 
-    def cacheName = getLibraryCacheName(script)
-    def localCachePath = ".library_cache/${cacheName}.zip"
+    def localCachePath = getLibraryCachePath(script)
 
     try {
         // Архивируем папку Library
@@ -190,7 +188,7 @@ def createLibraryCacheIfEnabled(def script) {
         echo "Library cache created at: ${localCachePath}"
 
         // Архивируем кэш как артефакт сборки
-        archiveArtifacts artifacts: ".library_cache/${cacheName}.zip"
+        archiveArtifacts artifacts: localCachePath
 
     } catch (Exception e) {
         echo "Failed to create library cache: ${e.getMessage()}"
@@ -198,14 +196,14 @@ def createLibraryCacheIfEnabled(def script) {
     }
 }
 
-def getLibraryCacheName(def script) {
+def getLibraryCachePath(def script) {
     def env = script.env
     def jobName = env?.JOB_NAME ?: "unknown_job"
 
     // Очищаем имя джобы от недопустимых символов для имени файла
     def cleanJobName = jobName.replaceAll('[^a-zA-Z0-9_-]', '_')
 
-    return "library_cache_${cleanJobName}"
+    return "~library_cache_${cleanJobName}.zip"
 }
 
 def postWebhook(def script) {
