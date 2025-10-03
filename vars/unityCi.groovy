@@ -211,6 +211,9 @@ def postWebhook(def script) {
     def env = script.env
     def options = script.options
 
+    def webhookEnabled = (env.WEBHOOK_ENABLED ?: "true") == "true"
+    if (!webhookEnabled) return
+
     def webhookUrl = options?.webhookUrl ?: env?.WEBHOOK_URL
 
     if (/*currentBuild.result == 'SUCCESS' && */ webhookUrl) {

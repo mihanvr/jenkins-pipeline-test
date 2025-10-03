@@ -6,3 +6,5 @@
 | SAVE_LIBRARY_CACHE     | true                  | Сохранять Library в артефакты для последующего переиспользования                  |
 | CLEAR_WORKSPACE_BEFORE | false                 | Удалить из workspace перед сборкой все файлы и папки, которые игнорируются git'ом |
 | CLEAR_WORKSPACE_AFTER  | true                  | Удалить из workspace после сборки все файлы и папки, которые игнорируются git'ом  |
+| WEBHOOK_URL            | ''                    | Вебхук для CI/CD                                                                  |
+| WEBHOOK_ENABLED        | true                  | Отправляють вебхук для CI/CD                                                      |
