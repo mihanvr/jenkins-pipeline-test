@@ -28,6 +28,17 @@ def defaultPipeline(def script) {
     def options = script.options
     def nodeLabel = options?.nodeLabel ?: options.env?.NODE_LABEL ?: "unity"
     node(nodeLabel) {
+
+        properties([
+                parameters([
+                        booleanParam(name: 'WEBHOOK_ENABLED', defaultValue: true, description: 'Отправляють вебхук для CI/CD'),
+                        booleanParam(name: 'RESTORE_LIBRARY_CACHE', defaultValue: true, description: 'Восстанавливать кэш Library'),
+                        booleanParam(name: 'SAVE_LIBRARY_CACHE', defaultValue: true, description: 'Сохранять кэш Library'),
+                        booleanParam(name: 'CLEAR_WORKSPACE_BEFORE', defaultValue: false, description: 'Очищать рабочую папку перед сборкой'),
+                        booleanParam(name: 'CLEAR_WORKSPACE_AFTER', defaultValue: true, description: 'Очищать рабочую папку после сборки'),
+                ])
+        ])
+
         env.BUILD_NODE_NAME = env.NODE_NAME
         notify(script: script, buildStatus: "Started")
         this.options = options
