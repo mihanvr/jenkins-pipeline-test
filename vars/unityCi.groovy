@@ -197,7 +197,7 @@ def migrateLibraryCache(def script) {
     if (fileExists(oldLibraryCachePath)) {
         echo "Found library cache from previous build: ${oldLibraryCachePath}"
         def newCacheLibraryPath = getLibraryCachePath()
-        sh "${oldLibraryCachePath} ${newCacheLibraryPath}"
+        sh "mv ${oldLibraryCachePath} ${newCacheLibraryPath}"
     }
 }
 
