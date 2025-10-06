@@ -32,7 +32,6 @@ def defaultPipeline(def script) {
                     booleanParam(name: 'RESTORE_LIBRARY_CACHE', defaultValue: true, description: 'Восстанавливать кэш Library'),
                     booleanParam(name: 'SAVE_LIBRARY_CACHE', defaultValue: true, description: 'Сохранять кэш Library'),
                     booleanParam(name: 'CLEAR_WORKSPACE_BEFORE', defaultValue: false, description: 'Очищать рабочую папку перед сборкой'),
-                    booleanParam(name: 'CLEAR_WORKSPACE_AFTER', defaultValue: true, description: 'Очищать рабочую папку после сборки'),
             ])
     ])
 
@@ -106,20 +105,6 @@ def defaultPipeline(def script) {
         stage("Create Library Cache") {
             createLibraryCacheIfEnabled(script)
         }
-
-        stage("Clear") {
-            afterBuild()
-        }
-    }
-}
-
-def afterBuild(def script) {
-    def clearWorkspaceAfter = (env.CLEAR_WORKSPACE_AFTER ?: "true") == "true"
-    if (clearWorkspaceAfter) {
-        exec label: "Clean", script: """
-                    git clean -fdx
-                    git submodule foreach --recursive git clean -fdx
-                    """
     }
 }
 
@@ -131,18 +116,10 @@ def prepareWorkspaceWithLibraryCache(def script) {
         return
     }
 
-    def localCachePath = getLibraryCachePath(script)
+    migrateLibraryCache(script)
 
-    // Пытаемся получить кэш из предыдущей успешной сборки
+    def localCachePath = getLibraryCachePath()
     try {
-        copyArtifacts(
-                projectName: env.JOB_NAME,
-                selector: script.lastSuccessful(),
-                filter: localCachePath,
-                target: ".",
-                flatten: true
-        )
-
         if (fileExists(localCachePath)) {
             echo "Found library cache from previous build: ${localCachePath}"
             restoreLibraryFromCache(script, localCachePath)
@@ -186,36 +163,46 @@ def createLibraryCacheIfEnabled(def script) {
         return
     }
 
-    def localCachePath = getLibraryCachePath(script)
+    def localCachePath = getLibraryCachePath()
 
     try {
         // Архивируем папку Library
         zip zipFile: localCachePath, dir: 'Library', overwrite: true, archive: false
-
         // Удаляем папку Library из workspace
         dir('Library') {
             deleteDir()
         }
-
         echo "Library cache created at: ${localCachePath}"
-
-        // Архивируем кэш как артефакт сборки
-        archiveArtifacts artifacts: localCachePath
-
     } catch (Exception e) {
         echo "Failed to create library cache: ${e.getMessage()}"
         // Не прерываем сборку, если создание кэша не удалось
     }
 }
 
-def getLibraryCachePath(def script) {
+def migrateLibraryCache(def script) {
     def env = script.env
     def jobName = env?.JOB_NAME ?: "unknown_job"
-
     // Очищаем имя джобы от недопустимых символов для имени файла
     def cleanJobName = jobName.replaceAll('[^a-zA-Z0-9_-]', '_')
+    def oldLibraryCachePath = "~library_cache_${cleanJobName}.zip"
 
-    return "~library_cache_${cleanJobName}.zip"
+    copyArtifacts(
+            projectName: env.JOB_NAME,
+            selector: script.lastSuccessful(),
+            filter: oldLibraryCachePath,
+            target: ".",
+            flatten: true
+    )
+
+    if (fileExists(localCachePath)) {
+        echo "Found library cache from previous build: ${oldLibraryCachePath}"
+        def newCacheLibraryPath = getLibraryCachePath()
+        sh "${localCachePath} ${newCacheLibraryPath}"
+    }
+}
+
+def getLibraryCachePath() {
+    return ".library_cache.zip"
 }
 
 def postWebhook(def script) {
@@ -269,7 +256,7 @@ def postWebhook(def script) {
                     }
                 }
             }
-            httpRequest consoleLogResponseBody: true, contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, customHeaders: customHeaders, validResponseCodes: '100:599'
+            httpRequest consoleLogResponseBody: true, contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, customHeaders: customHeaders, validResponseCodes: '100:599', quiet: false
         }
     }
 }
@@ -398,7 +385,7 @@ def discordNotify(def params) {
     def json = writeJSON(json: discordContent, returnText: true)
     echo json
     try {
-        httpRequest contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, validResponseCodes: '100:599'
+        httpRequest contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, validResponseCodes: '100:599', quiet: false
     } catch (Exception e) {
         echo e.class.canonicalName
         if (e.message?.contains("timed out")) {
