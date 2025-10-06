@@ -184,20 +184,25 @@ def migrateLibraryCache(def script) {
     def jobName = env?.JOB_NAME ?: "unknown_job"
     // Очищаем имя джобы от недопустимых символов для имени файла
     def cleanJobName = jobName.replaceAll('[^a-zA-Z0-9_-]', '_')
+    def newCacheLibraryPath = getLibraryCachePath()
     def oldLibraryCachePath = "~library_cache_${cleanJobName}.zip"
 
-    copyArtifacts(
-            projectName: env.JOB_NAME,
-            selector: script.lastSuccessful(),
-            filter: oldLibraryCachePath,
-            target: ".",
-            flatten: true
-    )
-
-    if (fileExists(oldLibraryCachePath)) {
-        echo "Found library cache from previous build: ${oldLibraryCachePath}"
-        def newCacheLibraryPath = getLibraryCachePath()
-        sh "mv ${oldLibraryCachePath} ${newCacheLibraryPath}"
+    if (fileExists(newCacheLibraryPath)) return
+    try {
+        copyArtifacts(
+                projectName: env.JOB_NAME,
+                selector: script.lastSuccessful(),
+                filter: oldLibraryCachePath,
+                target: ".",
+                flatten: true
+        )
+        if (fileExists(oldLibraryCachePath)) {
+            echo "Found library cache from previous build: ${oldLibraryCachePath}"
+            sh "mv ${oldLibraryCachePath} ${newCacheLibraryPath}"
+        }
+    } catch (Exception e) {
+        echo "Failed migrate library cache: ${e.getMessage()}"
+        // Не прерываем сборку, если создание кэша не удалось
     }
 }
 
