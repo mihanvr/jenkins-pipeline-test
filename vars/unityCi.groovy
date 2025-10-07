@@ -6,17 +6,17 @@ def pipeline(def script) {
     try {
         notify(script: script, buildStatus: "Queued")
         defaultPipeline(script)
-        notify(script: script, buildStatus: "Success", fields: [])
         script.currentBuild.result = 'SUCCESS'
+        notify(script: script, buildStatus: "Success", fields: [])
     } catch (Exception e) {
         try {
             if (e instanceof InterruptedException) {
-                script.currentBuild.result = 'CANCELED'
-                notify(script: script, buildStatus: "Canceled")
+                currentBuild.result = 'ABORTED'
             } else {
-                script.currentBuild.result = 'FAILED'
-                notify(script: script, content: e.toString(), buildStatus: "Failed")
+                def canceled = (env?.CANCELED ?: "false") == "true"
+                currentBuild.result = canceled ? 'ABORTED' : 'FAILURE'
             }
+            notify(script: script, content: e.toString(), buildStatus: buildInternalStatus(currentBuild.result))
         } catch (Exception e2) {
             echo e2.toString()
         }
@@ -25,15 +25,7 @@ def pipeline(def script) {
 }
 
 def defaultPipeline(def script) {
-
-    properties([
-            parameters([
-                    booleanParam(name: 'WEBHOOK_ENABLED', defaultValue: true, description: 'Отправляють вебхук для CI/CD'),
-                    booleanParam(name: 'RESTORE_LIBRARY_CACHE', defaultValue: true, description: 'Восстанавливать кэш Library'),
-                    booleanParam(name: 'SAVE_LIBRARY_CACHE', defaultValue: true, description: 'Сохранять кэш Library'),
-                    booleanParam(name: 'CLEAR_WORKSPACE_BEFORE', defaultValue: false, description: 'Очищать рабочую папку перед сборкой'),
-            ])
-    ])
+    checkParameters(script)
 
     def options = script.options
     def nodeLabel = options?.nodeLabel ?: options.env?.NODE_LABEL ?: "unity"
@@ -105,6 +97,53 @@ def defaultPipeline(def script) {
         stage("Create Library Cache") {
             createLibraryCacheIfEnabled(script)
         }
+    }
+}
+
+def checkParameters(def script) {
+    def actualParameters = [
+            booleanParam(name: 'WEBHOOK_ENABLED', defaultValue: true, description: 'Отправлять вебхук для CI/CD'),
+            booleanParam(name: 'RESTORE_LIBRARY_CACHE', defaultValue: true, description: 'Восстанавливать кэш Library'),
+            booleanParam(name: 'SAVE_LIBRARY_CACHE', defaultValue: true, description: 'Сохранять кэш Library'),
+            booleanParam(name: 'CLEAR_WORKSPACE_BEFORE', defaultValue: false, description: 'Очищать рабочую папку перед сборкой'),
+            booleanParam(name: 'IGNORE_OUT_OF_DATE_PARAMETERS', defaultValue: false, description: ''),
+    ]
+
+    if (script.hasProperty('additionalParameters')) {
+        actualParameters.addAll(script.additionalParameters)
+    }
+    // Проверяем, есть ли все нужные параметры в текущем билде
+    def expectedParamNames = actualParameters.collect { it.toMap().get("name") }
+    def currentParamNames = []
+
+    // Получаем текущие параметры из properties, если они есть
+    def currentJob = Jenkins.instance.getItemByFullName(env.JOB_NAME)
+    if (currentJob) {
+        def currentProperties = currentJob.getProperty(ParametersDefinitionProperty)
+        if (currentProperties) {
+            currentParamNames = currentProperties.getParameterDefinitions().collect { it.name }
+        }
+    }
+
+    def missingParams = expectedParamNames - currentParamNames
+
+    def parametersIsOutOfDate = !missingParams.isEmpty()
+
+    if (parametersIsOutOfDate) {
+        echo "parameters out-of-date: ${missingParams.join(', ')}"
+
+        // Объявляем параметры, чтобы они добавились в конфигурацию
+        properties([parameters(actualParameters)])
+
+        def ignoreOutOfDateParameters = env.IGNORE_OUT_OF_DATE_PARAMETERS ?: false
+        if (!ignoreOutOfDateParameters) {
+            // Помечаем сборку как отменённую
+            env.CANCELED = 'true'
+            currentBuild.result = 'CANCELED'
+            error("Parameters updated. Restart job.")
+        }
+    } else {
+        echo "parameters up-to-date"
     }
 }
 
@@ -328,6 +367,7 @@ def discordNotify(def params) {
     def options = script?.options
     def webhookUrl = options?.discordWebhookUrl ?: env?.DISCORD_WEBHOOK_URL
 
+    echo "Current build status: " + buildStatus
     if (notifyStages == null || !notifyStages.contains(buildStatus)) return
 
     if (!webhookUrl) return
@@ -392,7 +432,6 @@ def discordNotify(def params) {
     try {
         httpRequest contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, validResponseCodes: '100:599', quiet: false
     } catch (Exception e) {
-        echo e.class.canonicalName
         if (e.message?.contains("timed out")) {
             log.error(e.message)
         } else {
@@ -415,6 +454,12 @@ def toPrettySize(def sizeInBytes) {
         return "${wholeKb} KB"
     }
     return "${sizeInBytes} B"
+}
+
+def buildInternalStatus(def buildStatus) {
+    if (buildStatus == "FAILURE") return "Failed"
+    if (buildStatus == "ABORTED") return "Canceled"
+    return buildStatus
 }
 
 def getDiscordEmbedsColorFromStatus(def buildStatus) {
