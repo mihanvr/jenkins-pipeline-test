@@ -142,7 +142,7 @@ def restoreLibraryFromCache(def script, def cachePath) {
         }
 
         // Создаем директорию и распаковываем кэш
-        unzip zipFile: cachePath, dir: 'Library'
+        unzip zipFile: cachePath, dir: 'Library', quiet: true
         echo "Library cache restored successfully"
     } catch (Exception e) {
         echo "Failed to restore library cache: ${e.getMessage()}"
