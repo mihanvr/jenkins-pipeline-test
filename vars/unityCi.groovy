@@ -157,11 +157,13 @@ def prepareWorkspaceWithLibraryCache(def script) {
 
     migrateLibraryCache(script)
 
-    def localCachePath = getLibraryCachePath()
     try {
-        if (fileExists(localCachePath)) {
-            echo "Found library cache from previous build: ${localCachePath}"
-            restoreLibraryFromCache(script, localCachePath)
+        def localCachePathTarGz = getLibraryCachePath("tar.gz")
+        def localCachePathZip = getLibraryCachePath("zip")
+        if (fileExists(localCachePathTarGz)) {
+            restoreLibraryFromCache(script, localCachePathTarGz, "tar.gz")
+        } else if (fileExists(localCachePathZip)) {
+            restoreLibraryFromCache(script, localCachePathZip, "zip")
         } else {
             echo "No library cache found from previous builds, starting fresh build"
         }
@@ -171,7 +173,8 @@ def prepareWorkspaceWithLibraryCache(def script) {
     }
 }
 
-def restoreLibraryFromCache(def script, def cachePath) {
+def restoreLibraryFromCache(def script, def cachePath, def format) {
+    echo "Found library cache from previous build: ${cachePath}"
     try {
         // Удаляем существующую папку Library, если она есть
         if (fileExists('Library')) {
@@ -180,9 +183,17 @@ def restoreLibraryFromCache(def script, def cachePath) {
             }
         }
 
-        // Создаем директорию и распаковываем кэш
-        unzip zipFile: cachePath, dir: 'Library', quiet: true
-        echo "Library cache restored successfully"
+        if (format == "zip") {
+            // Создаем директорию и распаковываем кэш
+            unzip zipFile: cachePath, dir: 'Library', quiet: true
+            echo "Library cache restored successfully"
+        } else if (format == "tar.gz") {
+            sh "tar -xzf ${cachePath} -C Library"
+            echo "Library cache restored successfully"
+        } else {
+            echo "Unsupported cache format $format"
+        }
+
     } catch (Exception e) {
         echo "Failed to restore library cache: ${e.getMessage()}"
         // Продолжаем выполнение, даже если восстановление кэша не удалось
@@ -202,11 +213,12 @@ def createLibraryCacheIfEnabled(def script) {
         return
     }
 
-    def localCachePath = getLibraryCachePath()
+    def localCachePath = getLibraryCachePath("tar.gz")
 
     try {
         // Архивируем папку Library
-        zip zipFile: localCachePath, dir: 'Library', overwrite: true, archive: false
+//        zip zipFile: localCachePath, dir: 'Library', overwrite: true, archive: false
+        sh "tar -cf - Library 2>/dev/null | gzip -1 >$localCachePath"
         // Удаляем папку Library из workspace
         dir('Library') {
             deleteDir()
@@ -223,7 +235,7 @@ def migrateLibraryCache(def script) {
     def jobName = env?.JOB_NAME ?: "unknown_job"
     // Очищаем имя джобы от недопустимых символов для имени файла
     def cleanJobName = jobName.replaceAll('[^a-zA-Z0-9_-]', '_')
-    def newCacheLibraryPath = getLibraryCachePath()
+    def newCacheLibraryPath = getLibraryCachePath("zip")
     def oldLibraryCachePath = "~library_cache_${cleanJobName}.zip"
 
     if (fileExists(newCacheLibraryPath)) return
@@ -245,8 +257,8 @@ def migrateLibraryCache(def script) {
     }
 }
 
-def getLibraryCachePath() {
-    return ".library_cache.zip"
+def getLibraryCachePath(def format) {
+    return ".library_cache.${format}"
 }
 
 def postWebhook(def script) {
