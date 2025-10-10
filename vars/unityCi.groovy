@@ -208,6 +208,28 @@ def restoreLibraryFromCache(def script, def cachePath, def format) {
     }
 }
 
+def getCacheFormatAuto() {
+    if (isUnix()) {
+        return "tar.gz"
+    } else {
+        return "zip"
+    }
+}
+
+def getCacheFormat(def script) {
+    def libraryCacheFormatPref = script.env.LIBRARY_CACHE_FORMAT ?: "auto"
+    switch (libraryCacheFormatPref) {
+        case "zip":
+            return "zip"
+        case "tar.gz":
+            return "tar.gz"
+        case "auto":
+            return getCacheFormatAuto()
+        default:
+            return getCacheFormatAuto()
+    }
+}
+
 def createLibraryCacheIfEnabled(def script) {
     def saveLibraryCache = (env.SAVE_LIBRARY_CACHE ?: "true") == "true"
 
@@ -221,29 +243,7 @@ def createLibraryCacheIfEnabled(def script) {
         return
     }
 
-    def libraryCacheFormatPref = script.env.LIBRARY_CACHE_FORMAT ?: "auto"
-    echo "libraryCacheFormatPref: $libraryCacheFormatPref"
-    String libraryCacheFormat
-    switch (libraryCacheFormatPref) {
-        case "zip":
-            echo "case zip"
-        case "tar.gz":
-            echo "case tar.gz"
-            libraryCacheFormat = libraryCacheFormatPref
-            break
-        case "auto":
-            echo "case auto"
-        default:
-            echo "case default"
-            if (isUnix()) {
-                libraryCacheFormat = "tar.gz"
-            } else {
-                libraryCacheFormat = "zip"
-            }
-            break
-    }
-    echo "libraryCacheFormat: ${libraryCacheFormat}"
-
+    def libraryCacheFormat = getCacheFormat(script)
     def localCachePath = getLibraryCachePath(libraryCacheFormat)
 
     try {
