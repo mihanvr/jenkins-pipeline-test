@@ -195,6 +195,7 @@ def restoreLibraryFromCache(def script, def cachePath, def format) {
             unzip zipFile: cachePath, dir: 'Library', quiet: true
             echo "Library cache restored successfully"
         } else if (format == "tar.gz") {
+            sh "mkdir -p Library"
             sh "tar -xzf ${cachePath} -C Library"
             echo "Library cache restored successfully"
         } else {
@@ -221,6 +222,7 @@ def createLibraryCacheIfEnabled(def script) {
     }
 
     def libraryCacheFormatPref = script.env.LIBRARY_CACHE_FORMAT ?: "auto"
+    echo "libraryCacheFormatPref: $libraryCacheFormatPref"
     String libraryCacheFormat
     switch (libraryCacheFormatPref) {
         case "zip":
