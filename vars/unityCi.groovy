@@ -221,7 +221,7 @@ def createLibraryCacheIfEnabled(def script) {
     }
 
     def libraryCacheFormatPref = script.env.LIBRARY_CACHE_FORMAT ?: "auto"
-    def libraryCacheFormat = ""
+    String libraryCacheFormat
     switch (libraryCacheFormatPref) {
         case "zip":
         case "tar.gz":
