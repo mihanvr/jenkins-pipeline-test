@@ -114,7 +114,7 @@ def checkParameters(def script) {
             booleanParam(name: 'CLEAR_WORKSPACE_BEFORE', defaultValue: false, description: 'Очищать рабочую папку перед сборкой'),
             booleanParam(name: 'SETUP_PARAMETERS', defaultValue: true, description: 'Установить параметры в настройках задачи'),
             booleanParam(name: 'SETUP_PARAMETERS_ONLY', defaultValue: false, description: 'Отменить сборку после установки параметров'),
-            choice(name: 'LIBRARY_CACHE_FORMAT', choices: ['auto', 'zip', 'tar.gz'], 'Сохранять кэш Library в указанном формате')
+            choice(name: 'LIBRARY_CACHE_FORMAT', choices: ['auto', 'zip', 'tar.gz'], description: 'Сохранять кэш Library в указанном формате')
     ]
 
     if (script.hasProperty('additionalParameters')) {
