@@ -224,11 +224,15 @@ def createLibraryCacheIfEnabled(def script) {
     String libraryCacheFormat
     switch (libraryCacheFormatPref) {
         case "zip":
+            echo "case zip"
         case "tar.gz":
+            echo "case tar.gz"
             libraryCacheFormat = libraryCacheFormatPref
             break
         case "auto":
+            echo "case auto"
         default:
+            echo "case default"
             if (isUnix()) {
                 libraryCacheFormat = "tar.gz"
             } else {
@@ -236,6 +240,7 @@ def createLibraryCacheIfEnabled(def script) {
             }
             break
     }
+    echo "libraryCacheFormat: ${libraryCacheFormat}"
 
     def localCachePath = getLibraryCachePath(libraryCacheFormat)
 
