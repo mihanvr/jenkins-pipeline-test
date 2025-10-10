@@ -145,7 +145,7 @@ def checkParameters(def script) {
         echo "parameters up-to-date"
     }
 
-    def setupParametersOnly = (env.SETUP_PARAMETERS_ONLY ?: "true") == "true"
+    def setupParametersOnly = (env.SETUP_PARAMETERS_ONLY ?: "false") == "true"
     if (setupParametersOnly) {
         // Помечаем сборку как отменённую
         env.CANCELED = 'true'
