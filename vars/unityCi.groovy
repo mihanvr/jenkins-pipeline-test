@@ -101,12 +101,20 @@ def defaultPipeline(def script) {
 }
 
 def checkParameters(def script) {
+    def setupParameters = (env.SETUP_PARAMETERS ?: "true") == "true"
+    if (!setupParameters) {
+        echo "skip setup parameters"
+        return
+    }
+
     def actualParameters = [
             booleanParam(name: 'WEBHOOK_ENABLED', defaultValue: true, description: 'Отправлять вебхук для CI/CD'),
             booleanParam(name: 'RESTORE_LIBRARY_CACHE', defaultValue: true, description: 'Восстанавливать кэш Library'),
             booleanParam(name: 'SAVE_LIBRARY_CACHE', defaultValue: true, description: 'Сохранять кэш Library'),
             booleanParam(name: 'CLEAR_WORKSPACE_BEFORE', defaultValue: false, description: 'Очищать рабочую папку перед сборкой'),
-            booleanParam(name: 'IGNORE_OUT_OF_DATE_PARAMETERS', defaultValue: false, description: ''),
+            booleanParam(name: 'SETUP_PARAMETERS', defaultValue: true, description: 'Установить параметры в настройках задачи'),
+            booleanParam(name: 'SETUP_PARAMETERS_ONLY', defaultValue: false, description: 'Отменить сборку после установки параметров'),
+            choice(name: 'LIBRARY_CACHE_FORMAT', choices: ['auto', 'zip', 'tar.gz'], description: 'Сохранять кэш Library в указанном формате')
     ]
 
     if (script.hasProperty('additionalParameters')) {
@@ -131,19 +139,18 @@ def checkParameters(def script) {
 
     if (parametersIsOutOfDate) {
         echo "parameters out-of-date: ${missingParams.join(', ')}"
-
         // Объявляем параметры, чтобы они добавились в конфигурацию
         properties([parameters(actualParameters)])
-
-        def ignoreOutOfDateParameters = env.IGNORE_OUT_OF_DATE_PARAMETERS ?: false
-        if (!ignoreOutOfDateParameters) {
-            // Помечаем сборку как отменённую
-            env.CANCELED = 'true'
-            currentBuild.result = 'CANCELED'
-            error("Parameters updated. Restart job.")
-        }
     } else {
         echo "parameters up-to-date"
+    }
+
+    def setupParametersOnly = (env.SETUP_PARAMETERS_ONLY ?: "false") == "true"
+    if (setupParametersOnly) {
+        // Помечаем сборку как отменённую
+        env.CANCELED = 'true'
+        currentBuild.result = 'CANCELED'
+        error("Parameters updated")
     }
 }
 
@@ -188,6 +195,7 @@ def restoreLibraryFromCache(def script, def cachePath, def format) {
             unzip zipFile: cachePath, dir: 'Library', quiet: true
             echo "Library cache restored successfully"
         } else if (format == "tar.gz") {
+            sh "mkdir -p Library"
             sh "tar -xzf ${cachePath} -C Library"
             echo "Library cache restored successfully"
         } else {
@@ -197,6 +205,28 @@ def restoreLibraryFromCache(def script, def cachePath, def format) {
     } catch (Exception e) {
         echo "Failed to restore library cache: ${e.getMessage()}"
         // Продолжаем выполнение, даже если восстановление кэша не удалось
+    }
+}
+
+def getCacheFormatAuto() {
+    if (isUnix()) {
+        return "tar.gz"
+    } else {
+        return "zip"
+    }
+}
+
+def getCacheFormat(def script) {
+    def libraryCacheFormatPref = script.env.LIBRARY_CACHE_FORMAT ?: "auto"
+    switch (libraryCacheFormatPref) {
+        case "zip":
+            return "zip"
+        case "tar.gz":
+            return "tar.gz"
+        case "auto":
+            return getCacheFormatAuto()
+        default:
+            return getCacheFormatAuto()
     }
 }
 
@@ -213,11 +243,10 @@ def createLibraryCacheIfEnabled(def script) {
         return
     }
 
-    def localCachePath = getLibraryCachePath("tar.gz")
+    def libraryCacheFormat = getCacheFormat(script)
+    def localCachePath = getLibraryCachePath(libraryCacheFormat)
 
     try {
-        // Архивируем папку Library
-//        zip zipFile: localCachePath, dir: 'Library', overwrite: true, archive: false
         sh "tar -cf - Library 2>/dev/null | gzip -1 >$localCachePath"
         // Удаляем папку Library из workspace
         dir('Library') {
