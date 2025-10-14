@@ -196,7 +196,7 @@ def restoreLibraryFromCache(def script, def cachePath, def format) {
             echo "Library cache restored successfully"
         } else if (format == "tar.gz") {
             sh "mkdir -p Library"
-            sh "tar -xzf ${cachePath} -C Library"
+            sh "tar -xzf ${cachePath} -C ./"
             echo "Library cache restored successfully"
         } else {
             echo "Unsupported cache format $format"
