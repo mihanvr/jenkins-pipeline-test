@@ -247,7 +247,13 @@ def createLibraryCacheIfEnabled(def script) {
     def localCachePath = getLibraryCachePath(libraryCacheFormat)
 
     try {
-        sh "tar -cf - Library 2>/dev/null | gzip -1 >$localCachePath"
+        if (libraryCacheFormat == "zip") {
+            zip zipFile: localCachePath, dir: 'Library', overwrite: true, archive: false
+        } else if (libraryCacheFormat == "tar.gz") {
+            sh "tar -cf - Library 2>/dev/null | gzip -1 >$localCachePath"
+        } else {
+            throw new Exception("format ${libraryCacheFormat} not supported for Library cache")
+        }
         // Удаляем папку Library из workspace
         dir('Library') {
             deleteDir()
