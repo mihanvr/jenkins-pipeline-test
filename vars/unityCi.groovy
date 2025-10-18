@@ -251,6 +251,8 @@ def createLibraryCacheIfEnabled(def script) {
     def libraryCacheFormat = getCacheFormat(script)
     def localCachePath = getLibraryCachePath(libraryCacheFormat)
 
+    echo "cache format: ${libraryCacheFormat}"
+
     try {
         if (libraryCacheFormat == "zip") {
             zip zipFile: localCachePath, dir: 'Library', overwrite: true, archive: false
