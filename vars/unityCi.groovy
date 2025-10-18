@@ -167,7 +167,12 @@ def prepareWorkspaceWithLibraryCache(def script) {
     try {
         def localCachePathTarGz = getLibraryCachePath("tar.gz")
         def localCachePathZip = getLibraryCachePath("zip")
-        if (fileExists(localCachePathTarGz)) {
+        def libraryCacheFormat = getCacheFormat(script)
+        if (libraryCacheFormat == "zip" && fileExists(localCachePathZip)) {
+            restoreLibraryFromCache(script, localCachePathZip, "zip")
+        } else if (libraryCacheFormat == "tar.gz" && fileExists(localCachePathTarGz)) {
+            restoreLibraryFromCache(script, localCachePathTarGz, "tar.gz")
+        } else if (fileExists(localCachePathTarGz)) {
             restoreLibraryFromCache(script, localCachePathTarGz, "tar.gz")
         } else if (fileExists(localCachePathZip)) {
             restoreLibraryFromCache(script, localCachePathZip, "zip")
