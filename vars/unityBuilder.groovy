@@ -104,6 +104,8 @@ def getRequiredUnityModules(String buildTarget) {
             return ['android']
         case "ios":
             return ['ios']
+        case "standalonelinux64":
+            return ["linux-mono"]
     }
     return []
 }
