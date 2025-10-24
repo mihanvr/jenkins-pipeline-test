@@ -201,12 +201,6 @@ def restoreLibraryFromCache(def script, def cachePath, def format) {
     }
 }
 
-def getCacheFormatAuto() {
-    if (isUnix()) {
-        return "zip"
-    }
-}
-
 def getCacheFormat(def script) {
     return "zip"
 }

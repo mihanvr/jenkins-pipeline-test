@@ -142,7 +142,7 @@ def processArtifacts(def script) {
         case 'ios':
             def archiveFileName = "${buildTag}.zip"
             log.info("create artifact ${archiveFileName} from directory ${outputPath}")
-            zip zipFile: archiveFileName, dir: outputPath, overwrite: true, archive: false
+            zip zipFile: archiveFileName, dir: outputPath, overwrite: true, archive: false, exclude: '*_DoNotShip/**, *_ButDontShipItWithYourGame/**'
             archiveArtifacts artifacts: archiveFileName  // Явно архивируем
             if (!keepArtifacts) {
                 log.info("delete uploaded artifact ${outputPath}")
