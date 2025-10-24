@@ -114,7 +114,6 @@ def checkParameters(def script) {
             booleanParam(name: 'CLEAR_WORKSPACE_BEFORE', defaultValue: false, description: 'Очищать рабочую папку перед сборкой'),
             booleanParam(name: 'SETUP_PARAMETERS', defaultValue: true, description: 'Установить параметры в настройках задачи'),
             booleanParam(name: 'SETUP_PARAMETERS_ONLY', defaultValue: false, description: 'Отменить сборку после установки параметров'),
-            choice(name: 'LIBRARY_CACHE_FORMAT', choices: ['auto', 'zip', 'tar.gz'], description: 'Сохранять кэш Library в указанном формате')
     ]
 
     if (script.hasProperty('additionalParameters')) {
@@ -165,16 +164,9 @@ def prepareWorkspaceWithLibraryCache(def script) {
     migrateLibraryCache(script)
 
     try {
-        def localCachePathTarGz = getLibraryCachePath("tar.gz")
         def localCachePathZip = getLibraryCachePath("zip")
         def libraryCacheFormat = getCacheFormat(script)
         if (libraryCacheFormat == "zip" && fileExists(localCachePathZip)) {
-            restoreLibraryFromCache(script, localCachePathZip, "zip")
-        } else if (libraryCacheFormat == "tar.gz" && fileExists(localCachePathTarGz)) {
-            restoreLibraryFromCache(script, localCachePathTarGz, "tar.gz")
-        } else if (fileExists(localCachePathTarGz)) {
-            restoreLibraryFromCache(script, localCachePathTarGz, "tar.gz")
-        } else if (fileExists(localCachePathZip)) {
             restoreLibraryFromCache(script, localCachePathZip, "zip")
         } else {
             echo "No library cache found from previous builds, starting fresh build"
@@ -199,10 +191,6 @@ def restoreLibraryFromCache(def script, def cachePath, def format) {
             // Создаем директорию и распаковываем кэш
             unzip zipFile: cachePath, dir: 'Library', quiet: true
             echo "Library cache restored successfully"
-        } else if (format == "tar.gz") {
-            sh "mkdir -p Library"
-            sh "tar -xzf ${cachePath} -C ./"
-            echo "Library cache restored successfully"
         } else {
             echo "Unsupported cache format $format"
         }
@@ -215,24 +203,12 @@ def restoreLibraryFromCache(def script, def cachePath, def format) {
 
 def getCacheFormatAuto() {
     if (isUnix()) {
-        return "tar.gz"
-    } else {
         return "zip"
     }
 }
 
 def getCacheFormat(def script) {
-    def libraryCacheFormatPref = script.env.LIBRARY_CACHE_FORMAT ?: "auto"
-    switch (libraryCacheFormatPref) {
-        case "zip":
-            return "zip"
-        case "tar.gz":
-            return "tar.gz"
-        case "auto":
-            return getCacheFormatAuto()
-        default:
-            return getCacheFormatAuto()
-    }
+    return "zip"
 }
 
 def createLibraryCacheIfEnabled(def script) {
@@ -256,8 +232,6 @@ def createLibraryCacheIfEnabled(def script) {
     try {
         if (libraryCacheFormat == "zip") {
             zip zipFile: localCachePath, dir: 'Library', overwrite: true, archive: false
-        } else if (libraryCacheFormat == "tar.gz") {
-            sh "tar -cf - Library 2>/dev/null | gzip -1 >$localCachePath"
         } else {
             throw new Exception("format ${libraryCacheFormat} not supported for Library cache")
         }
