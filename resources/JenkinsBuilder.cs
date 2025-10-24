@@ -97,14 +97,16 @@ public static class JenkinsBuilder
     {
         var sb = new StringBuilder();
         sb.AppendLine("buildPlayerOptions:");
-        sb.Append("scenes: ").AppendLine(string.Join(", ", buildPlayerOptions.scenes));
-        sb.Append("extraScriptingDefines: ").AppendLine(string.Join(", ", buildPlayerOptions.extraScriptingDefines));
+        sb.Append("scenes: ")
+            .AppendLine(buildPlayerOptions.scenes == null ? "null" : string.Join(", ", buildPlayerOptions.scenes));
+        sb.Append("extraScriptingDefines: ").AppendLine(buildPlayerOptions.extraScriptingDefines == null
+            ? "null"
+            : string.Join(", ", buildPlayerOptions.extraScriptingDefines));
         sb.Append("options: ").AppendLine(buildPlayerOptions.options.ToString());
-        sb.Append("locationPathName: ").AppendLine(string.Join(", ", buildPlayerOptions.locationPathName));
-        sb.Append("target: ").AppendLine(string.Join(", ", buildPlayerOptions.target));
-        sb.Append("targetGroup: ").AppendLine(string.Join(", ", buildPlayerOptions.targetGroup));
-        sb.Append("assetBundleManifestPath: ")
-            .AppendLine(string.Join(", ", buildPlayerOptions.assetBundleManifestPath));
+        sb.Append("locationPathName: ").AppendLine(buildPlayerOptions.locationPathName);
+        sb.Append("target: ").AppendLine(buildPlayerOptions.target.ToString());
+        sb.Append("targetGroup: ").AppendLine(buildPlayerOptions.targetGroup.ToString());
+        sb.Append("assetBundleManifestPath: ").AppendLine(buildPlayerOptions.assetBundleManifestPath);
         Debug.Log(sb.ToString());
     }
 
