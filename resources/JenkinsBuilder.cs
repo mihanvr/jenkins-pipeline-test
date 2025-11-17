@@ -144,24 +144,32 @@ public static class JenkinsBuilder
         ref BuildPlayerOptions buildPlayerOptions)
     {
         if (options == null) return;
+        var forceSetCustomKeyStore = false;
         if (options.keystoreName != null)
         {
             PlayerSettings.Android.keystoreName = options.keystoreName;
+            forceSetCustomKeyStore = true;
         }
 
         if (options.keystorePass != null)
         {
             PlayerSettings.Android.keystorePass = options.keystorePass;
+            forceSetCustomKeyStore = true;
         }
 
         if (options.keyaliasName != null)
         {
             PlayerSettings.Android.keyaliasName = options.keyaliasName;
+            forceSetCustomKeyStore = true;
         }
 
         if (options.keyaliasPass != null)
         {
             PlayerSettings.Android.keyaliasPass = options.keyaliasPass;
+            forceSetCustomKeyStore = true;
+        }
+        if (forceSetCustomKeyStore) {
+            PlayerSettings.Android.useCustomKeystore = true;
         }
 
         EditorUserBuildSettings.buildAppBundle = options.buildAppBundle;
