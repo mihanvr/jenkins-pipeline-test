@@ -1,0 +1,38 @@
+plugins {
+    id 'groovy'
+}
+
+repositories {
+    mavenCentral()
+    // groovy-cps, which JenkinsPipelineUnit pulls in, is published only here
+    maven { url = 'https://repo.jenkins-ci.org/releases/' }
+}
+
+dependencies {
+    // JenkinsPipelineUnit still declares groovy-all 2.4 at runtime; the tests run on Groovy 4 instead,
+    // because its own classes are compiled for JVM 21 and the 2.4 compiler cannot read them
+    testImplementation('com.lesfurets:jenkins-pipeline-unit:1.31') {
+        exclude group: 'org.codehaus.groovy'
+    }
+    testImplementation 'org.apache.groovy:groovy:4.0.33'
+    testImplementation 'org.apache.groovy:groovy-json:4.0.33'
+    testImplementation 'junit:junit:4.13.2'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(25)
+    }
+}
+
+test {
+    useJUnit()
+    // the pipeline scripts are loaded from disk at runtime, so Gradle cannot see them as inputs on its own
+    inputs.dir('vars')
+    inputs.dir('resources')
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+        exceptionFormat 'full'
+        showStandardStreams = true
+    }
+}

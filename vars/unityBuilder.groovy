@@ -54,23 +54,24 @@ def build(def script) {
         buildOptions.enableHeadlessMode = true
         buildOptions.buildSubTarget = 'Server'
     }
-    if (options.android) {
-        buildOptions.android = options.android
-    }
     if (options.webgl) {
         buildOptions.webgl = options.webgl
     }
-    if (options.hideUnityLogo) {
-        buildOptions.hideUnityLogo = options.hideUnityLogo
+    if (options.hideUnityLogo != null) {
+        buildOptions.hideUnityLogo = options.hideUnityLogo.toString().toBoolean()
+    }
+
+    def buildNumber = options.buildNumber ?: env?.BUILD_NUMBER
+    if (buildNumber) {
+        buildOptions.buildNumber = buildNumber as int
+    }
+    if (options.version) {
+        buildOptions.version = options.version
     }
 
     dir('Assets/Editor') {
         writeFile file: 'JenkinsBuilder.cs', text: libraryResource('JenkinsBuilder.cs')
     }
-    writeJSON file: 'ci_build_options.json', json: buildOptions
-    echo 'ci_build_options.json'
-    echo writeJSON(json: buildOptions, returnText: true)
-
     def ciEnv = [
             "BUILD_NUMBER": env?.BUILD_NUMBER,
             "JOB_NAME"    : env?.JOB_NAME,
@@ -86,12 +87,82 @@ def build(def script) {
     }
 
     additionalParameters += ' -ciOptionsFile ci_build_options.json'
-    unity.execute(projectDir: projectDir, methodToExecute: 'JenkinsBuilder.Build', buildTarget: buildTarget, noGraphics: serverMode, additionalParameters: additionalParameters)
+
+    withAndroidCredentials(options.android) { androidOptions, secretsFromCredentials ->
+        if (androidOptions) {
+            buildOptions.android = androidOptions
+        }
+
+        writeJSON file: 'ci_build_options.json', json: buildOptions
+        echo 'ci_build_options.json'
+        echo writeJSON(json: maskSecrets(buildOptions), returnText: true)
+
+        unity.execute(projectDir: projectDir, methodToExecute: 'JenkinsBuilder.Build', buildTarget: buildTarget, noGraphics: serverMode, additionalParameters: additionalParameters)
+
+        if (secretsFromCredentials) {
+            // the options file holds the resolved passwords, so it must not outlive the build
+            file.deleteFile('ci_build_options.json')
+        }
+    }
 
     env.OUTPUT_PATH = outputPath
     return [
             outputPath: outputPath
     ]
+}
+
+// Android secrets can come as plain values (as before) or as Jenkins credential ids.
+// Credentials win when both are given, and a file credential lives only inside the block,
+// which is why the caller runs the whole build inside it.
+def withAndroidCredentials(def androidOptions, Closure body) {
+    def bindings = []
+    if (androidOptions?.keystoreCredentialsId) {
+        bindings.add([$class: 'FileBinding', credentialsId: androidOptions.keystoreCredentialsId, variable: 'CI_ANDROID_KEYSTORE_FILE'])
+    }
+    if (androidOptions?.keystorePassCredentialsId) {
+        bindings.add([$class: 'StringBinding', credentialsId: androidOptions.keystorePassCredentialsId, variable: 'CI_ANDROID_KEYSTORE_PASS'])
+    }
+    if (androidOptions?.keyaliasPassCredentialsId) {
+        bindings.add([$class: 'StringBinding', credentialsId: androidOptions.keyaliasPassCredentialsId, variable: 'CI_ANDROID_KEYALIAS_PASS'])
+    }
+
+    if (bindings.isEmpty()) {
+        body.call(resolveAndroidOptions(androidOptions, null, null, null), false)
+        return
+    }
+
+    withCredentials(bindings) {
+        body.call(resolveAndroidOptions(
+                androidOptions,
+                env.CI_ANDROID_KEYSTORE_FILE,
+                env.CI_ANDROID_KEYSTORE_PASS,
+                env.CI_ANDROID_KEYALIAS_PASS), true)
+    }
+}
+
+def resolveAndroidOptions(def androidOptions, def keystoreFile, def keystorePass, def keyaliasPass) {
+    if (androidOptions == null) return null
+    def resolved = new LinkedHashMap(androidOptions)
+    // credential ids describe where the secrets live; Unity has no use for them
+    resolved.remove('keystoreCredentialsId')
+    resolved.remove('keystorePassCredentialsId')
+    resolved.remove('keyaliasPassCredentialsId')
+    if (keystoreFile) resolved.keystoreName = keystoreFile
+    if (keystorePass) resolved.keystorePass = keystorePass
+    if (keyaliasPass) resolved.keyaliasPass = keyaliasPass
+    return resolved
+}
+
+def maskSecrets(def buildOptions) {
+    def masked = new LinkedHashMap(buildOptions)
+    def android = masked.android
+    if (android != null) {
+        def androidCopy = new LinkedHashMap(android)
+        if (androidCopy.keystorePass) androidCopy.keystorePass = '***'
+        if (androidCopy.keyaliasPass) androidCopy.keyaliasPass = '***'
+        masked.android = androidCopy
+    }
+    return masked
 }
 
 def getRequiredUnityModules(String buildTarget) {
@@ -207,7 +278,8 @@ def getLocationPathName(def script) {
         case 'webgl':
             return buildOutputPath
         case 'android':
-            def ext = options.buildAppBundle ? '.aab' : '.apk'
+            def buildAppBundle = options.android?.buildAppBundle ?: options.buildAppBundle
+            def ext = buildAppBundle ? '.aab' : '.apk'
             def buildTag = options.buildTag ?: env?.BUILD_TAG
             return "${buildOutputPath}/${buildTag}${ext}"
         case 'ios':

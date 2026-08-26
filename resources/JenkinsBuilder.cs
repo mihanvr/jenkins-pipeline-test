@@ -31,34 +31,31 @@ public static class JenkinsBuilder
             ciBuildOptionsJsonFilePath = BuildOptionsJsonFilePath;
         }
 
-        if (!File.Exists(BuildOptionsJsonFilePath))
+        if (!File.Exists(ciBuildOptionsJsonFilePath))
         {
             if (explicitDefined) throw new FileNotFoundException(ciBuildOptionsJsonFilePath);
             return;
         }
 
-        var json = File.ReadAllText(BuildOptionsJsonFilePath);
+        var json = File.ReadAllText(ciBuildOptionsJsonFilePath);
         EditorJsonUtility.FromJsonOverwrite(json, args);
     }
 
     private static bool TryGetCommandLineArgValue(string argName, out string value)
     {
         var commandLineArgs = Environment.GetCommandLineArgs();
-        var found = false;
-        foreach (var commandLineArg in commandLineArgs)
+        for (var i = 0; i < commandLineArgs.Length - 1; i++)
         {
-            if (commandLineArg.StartsWith("-"))
-            {
-                if (commandLineArg.TrimStart('-') == argName)
-                {
-                    found = true;
-                }
-            }
-            else if (found)
-            {
-                value = commandLineArg;
-                return true;
-            }
+            var arg = commandLineArgs[i];
+            if (!arg.StartsWith("-")) continue;
+            if (arg.TrimStart('-') != argName) continue;
+
+            // a flag carries no value: -batchmode is followed by the next flag, not by its argument
+            var next = commandLineArgs[i + 1];
+            if (next.StartsWith("-")) break;
+
+            value = next;
+            return true;
         }
 
         value = default;
@@ -74,6 +71,7 @@ public static class JenkinsBuilder
 
         SetupAndroidOptions(options.android, ref buildPlayerOptions);
         SetupWebGlOptions(options.webgl, ref buildPlayerOptions);
+        SetupVersionOptions(options);
 
         TryRunMethod(options.preBuildMethod);
         LogBuildPlayerOptions(buildPlayerOptions);
@@ -81,7 +79,7 @@ public static class JenkinsBuilder
         Debug.Log($"Build completed with result: {buildPlayer.summary.result}");
         if (buildPlayer.summary.result != BuildResult.Succeeded)
         {
-            if (TryGetCommandLineArgValue("batchmode", out _))
+            if (Application.isBatchMode)
             {
                 Console.Error.WriteLine("totalErrors: " + buildPlayer.summary.totalErrors);
                 EditorApplication.Exit(1);
@@ -113,21 +111,45 @@ public static class JenkinsBuilder
     public static void TryRunMethod(string fullMethodName)
     {
         if (string.IsNullOrEmpty(fullMethodName)) return;
-        var lastPointIndex = fullMethodName.LastIndexOf(".");
-        var typeName = "Editor." + fullMethodName.Substring(0, lastPointIndex);
+        var lastPointIndex = fullMethodName.LastIndexOf(".", StringComparison.Ordinal);
+        if (lastPointIndex < 0) throw new ArgumentException("expected Namespace.Type.Method: " + fullMethodName);
+        var typeName = fullMethodName.Substring(0, lastPointIndex);
         var methodName = fullMethodName.Substring(lastPointIndex + 1);
+        // the Editor. prefix is what older projects relied on, so it stays as a second candidate
+        var typeNames = new[] { typeName, "Editor." + typeName };
         var assemblies = AppDomain.CurrentDomain.GetAssemblies();
         foreach (var assembly in assemblies)
         {
-            var type = assembly.GetType(typeName);
-            if (type == null) continue;
-            var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
-            if (method == null) continue;
-            method.Invoke(null, null);
-            return;
+            foreach (var candidate in typeNames)
+            {
+                var type = assembly.GetType(candidate);
+                if (type == null) continue;
+                var method = type.GetMethod(methodName, BindingFlags.Public | BindingFlags.Static);
+                if (method == null) continue;
+                method.Invoke(null, null);
+                return;
+            }
         }
 
         throw new MissingMethodException(fullMethodName);
+    }
+
+    private static void SetupVersionOptions(CIBuildOptions options)
+    {
+        // the semantic version belongs to the repository; CI only overrides it when a job asks for it
+        if (!string.IsNullOrEmpty(options.version))
+        {
+            PlayerSettings.bundleVersion = options.version;
+        }
+
+        // the build number is assigned per CI run and is never stored in the repository
+        if (options.buildNumber > 0)
+        {
+            PlayerSettings.Android.bundleVersionCode = options.buildNumber;
+            PlayerSettings.iOS.buildNumber = options.buildNumber.ToString();
+        }
+
+        Debug.Log($"version: {PlayerSettings.bundleVersion}, buildNumber: {options.buildNumber}");
     }
 
     private static void SetupWebGlOptions(CIBuildOptions.WebGLOptions options,
@@ -251,6 +273,8 @@ public static class JenkinsBuilder
     [Serializable]
     public class CIBuildOptions
     {
+        public string version;
+        public int buildNumber;
         public string buildTarget;
         public string buildSubTarget;
         public string[] scenes;

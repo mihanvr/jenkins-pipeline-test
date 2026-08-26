@@ -28,8 +28,7 @@ def defaultPipeline(def script) {
     checkParameters(script)
 
     def options = script.options
-    def nodeLabel = options?.nodeLabel ?: options.env?.NODE_LABEL ?: "unity"
-    node(nodeLabel) {
+    node(getNodeLabel(script)) {
         env.BUILD_NODE_NAME = env.NODE_NAME
         notify(script: script, buildStatus: "Started")
         this.options = options
@@ -98,6 +97,11 @@ def defaultPipeline(def script) {
             createLibraryCacheIfEnabled(script)
         }
     }
+}
+
+// NODE_LABEL used to be read from options.env, a key no template ever sets, so the fallback never fired
+def getNodeLabel(def script) {
+    return script.options?.nodeLabel ?: script.env?.NODE_LABEL ?: "unity"
 }
 
 def checkParameters(def script) {
