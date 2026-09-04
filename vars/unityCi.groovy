@@ -267,6 +267,22 @@ def migrateLibraryCache(def script) {
     }
 }
 
+// script.scm приходит в двух несовместимых формах. У job'а типа Pipeline script from SCM
+// это hudson.plugins.git.GitSCM, у которого свойства arguments нет вовсе: обращение к нему
+// бросает MissingPropertyException, а не возвращает null, поэтому безопасной навигации мало.
+// Когда SCM собирает сама библиотека через scmGit, свойство есть и его надо прочитать.
+//
+// Проверкой hasProperty('arguments') это не решается: на Map с живым ключом arguments она
+// возвращает null, и рабочий случай молча уехал бы в фолбэк.
+def getGitBranch(def script) {
+    def branch = null
+    try {
+        branch = script?.scm?.arguments?.branches?.get(0)?.name
+    } catch (Exception ignored) {
+    }
+    return branch ?: script?.options?.gitBranch ?: script?.env?.GIT_BRANCH
+}
+
 def getLibraryCachePath(def format) {
     return ".library_cache.${format}"
 }
@@ -285,7 +301,7 @@ def postWebhook(def script) {
             def changeLog = getChangeLogFromLatestSuccess(script)
             def artifacts = getBuildArtifacts(script)
             def buildTarget = options?.buildTarget ?: env?.BUILD_TARGET
-            def gitBranch = script.scm?.arguments?.branches?.get(0)?.name ?: options?.gitBranch ?: env?.GIT_BRANCH
+            def gitBranch = getGitBranch(script)
 
             def jsonBody = [
                     result               : currentBuild.result,
@@ -426,7 +442,7 @@ def discordNotify(def params) {
         fields.add([name: "Started By", value: buildCause, inline: true])
     }
 
-    def gitBranch = script.scm?.arguments?.branches?.get(0)?.name ?: options?.gitBranch ?: env?.GIT_BRANCH
+    def gitBranch = getGitBranch(script)
     if (gitBranch) {
         fields.add([name: "Branch", value: gitBranch, inline: true])
     }
