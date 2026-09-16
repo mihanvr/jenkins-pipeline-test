@@ -116,7 +116,12 @@ def checkParameters(def script) {
             booleanParam(name: 'SETUP_PARAMETERS_ONLY', defaultValue: false, description: 'Отменить сборку после установки параметров'),
     ]
 
-    if (script.hasProperty('additionalParameters')) {
+    if (script.hasProperty('additionalParameters') && script.additionalParameters) {
+        // Параметр скрипта с библиотечным именем заменяет библиотечный: так Jenkinsfile задаёт своё
+        // умолчание (например, выключенный кэш Library), и оно переживает перерегистрацию параметров
+        // при появлении нового.
+        def overridden = script.additionalParameters.collect { it.toMap().get("name") }
+        actualParameters = actualParameters.findAll { !(it.toMap().get("name") in overridden) }
         actualParameters.addAll(script.additionalParameters)
     }
     // Проверяем, есть ли все нужные параметры в текущем билде

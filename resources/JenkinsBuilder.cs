@@ -67,7 +67,10 @@ public static class JenkinsBuilder
 
     public static void Build(CIBuildOptions options)
     {
-        EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64);
+        // Редактор приходит сюда уже на целевой платформе: unityBuilder передаёт -buildTarget в командной
+        // строке. Промежуточного переключения на Standalone нет намеренно: каждая смена платформы это
+        // реимпорт всех платформозависимых ассетов и перекомпиляция скриптов, на большом проекте
+        // десятки минут, а холодная Library переимпортирует их с нуля.
         var buildPlayerOptions = new BuildPlayerOptions();
         SetupCommonOptions(options, ref buildPlayerOptions);
         EditorUserBuildSettings.SwitchActiveBuildTarget(buildPlayerOptions.targetGroup, buildPlayerOptions.target);
