@@ -28,7 +28,8 @@ def defaultPipeline(def script) {
     checkParameters(script)
 
     def options = script.options
-    def nodeLabel = options?.nodeLabel ?: options.env?.NODE_LABEL ?: "unity"
+    def nodeLabel = getNodeLabel(script)
+    checkNodeLabel(nodeLabel)
     node(nodeLabel) {
         env.BUILD_NODE_NAME = env.NODE_NAME
         notify(script: script, buildStatus: "Started")
@@ -100,6 +101,40 @@ def defaultPipeline(def script) {
     }
 }
 
+// NODE_LABEL из формы запуска перекрывает options.nodeLabel: шаблон задаёт умолчание, а в форме выбирают
+// ноду на одну сборку. У каждой ноды есть метка с её именем, поэтому одно поле принимает и имя (WinBuild),
+// и выражение меток (unity && win).
+def getNodeLabel(def script) {
+    return env.NODE_LABEL?.trim() ?: script.options?.nodeLabel ?: "unity"
+}
+
+// Метку, под которую не подходит ни одна нода, node() принимает, и сборка висит в очереди, пока её не снимут
+// руками. Поэтому промах валит сборку сразу и называет ноды, из которых можно выбрать.
+def checkNodeLabel(String nodeLabel) {
+    def problem = describeNodeLabelProblem(nodeLabel)
+    if (problem) {
+        error(problem)
+    }
+}
+
+@NonCPS
+def describeNodeLabelProblem(String expression) {
+    def jenkins = Jenkins.instance
+    // Выражение с синтаксической ошибкой getLabel не отвергает, а читает как одну метку с таким именем:
+    // такой метки нет ни у одной ноды, и ошибка приходит тем же сообщением, что и опечатка в имени.
+    // Нода без исполнителей (built-in здесь такая) сборку тоже не возьмёт никогда.
+    def label = jenkins.getLabel(expression)
+    if (label != null && label.nodes.any { it.numExecutors > 0 }) {
+        return null
+    }
+    def known = ([jenkins] + jenkins.nodes).collect { node ->
+        def name = node.nodeName ?: 'built-in'
+        def labels = node.labelString?.trim()
+        return labels ? "${name} (${labels})" : name
+    }
+    return "NODE_LABEL '${expression}' не подходит ни одной ноде. Ноды и их метки: ${known.join(', ')}"
+}
+
 def checkParameters(def script) {
     def setupParameters = (env.SETUP_PARAMETERS ?: "true") == "true"
     if (!setupParameters) {
@@ -109,6 +144,7 @@ def checkParameters(def script) {
     }
 
     def actualParameters = [
+            string(name: 'NODE_LABEL', defaultValue: '', trim: true, description: 'Где собирать: имя ноды (WinBuild) или выражение меток (unity && win). Пусто: метка из настроек задачи, без неё unity'),
             booleanParam(name: 'WEBHOOK_ENABLED', defaultValue: true, description: 'Отправлять вебхук для CI/CD'),
             booleanParam(name: 'RESTORE_LIBRARY_CACHE', defaultValue: true, description: 'Восстанавливать кэш Library'),
             booleanParam(name: 'SAVE_LIBRARY_CACHE', defaultValue: true, description: 'Сохранять кэш Library'),
