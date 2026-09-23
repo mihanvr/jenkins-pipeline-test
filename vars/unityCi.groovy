@@ -104,6 +104,7 @@ def checkParameters(def script) {
     def setupParameters = (env.SETUP_PARAMETERS ?: "true") == "true"
     if (!setupParameters) {
         echo "skip setup parameters"
+        rememberParameterValues(script)
         return
     }
 
@@ -149,6 +150,8 @@ def checkParameters(def script) {
         echo "parameters up-to-date"
     }
 
+    rememberParameterValues(script)
+
     def setupParametersOnly = (env.SETUP_PARAMETERS_ONLY ?: "false") == "true"
     if (setupParametersOnly) {
         // Помечаем сборку как отменённую
@@ -156,6 +159,52 @@ def checkParameters(def script) {
         currentBuild.result = 'CANCELED'
         error("Parameters updated")
     }
+}
+
+// Значения параметров из options.rememberedParameters, выбранные в этой сборке, становятся умолчаниями
+// задачи, и форма следующего запуска открывается с прошлым выбором. Какие параметры запоминать, решает
+// Jenkinsfile: разовые действия (очистка workspace, кэш Library) туда не кладут, иначе одна сборка
+// с галкой превратит её в режим для всех следующих. Вызывается и при SETUP_PARAMETERS=false: тот
+// управляет набором параметров, а здесь меняются только умолчания уже заведённых.
+def rememberParameterValues(def script) {
+    def names = script.options?.rememberedParameters
+    if (!names) return
+    def remembered = rememberParameterDefaults(env.JOB_NAME, currentBuild.number, names.collect { it.toString() })
+    if (remembered) {
+        echo "remembered parameter values: ${remembered.join(', ')}"
+    }
+}
+
+// Переписывает умолчания задачи значениями сборки buildNumber для параметров из names и возвращает
+// имена изменившихся. Параметр, чей тип не умеет copyWithDefaultValue, остаётся как был. Заменяется
+// только свойство параметров, остальные свойства задачи не трогаются.
+@NonCPS
+def rememberParameterDefaults(String jobName, int buildNumber, List<String> names) {
+    def job = Jenkins.instance.getItemByFullName(jobName)
+    def property = job?.getProperty(ParametersDefinitionProperty)
+    def values = job?.getBuildByNumber(buildNumber)?.getAction(ParametersAction)
+    if (property == null || values == null) return []
+
+    def remembered = []
+    def definitions = property.parameterDefinitions.collect { definition ->
+        def value = definition.name in names ? values.getParameter(definition.name) : null
+        if (value == null || value.value == definition.defaultParameterValue?.value) return definition
+        def copy = definition.copyWithDefaultValue(value)
+        if (copy.is(definition)) return definition
+        remembered << definition.name
+        return copy
+    }
+    if (remembered) {
+        def change = new hudson.BulkChange(job)
+        try {
+            job.removeProperty(ParametersDefinitionProperty)
+            job.addProperty(new ParametersDefinitionProperty(definitions))
+            change.commit()
+        } finally {
+            change.abort()
+        }
+    }
+    return remembered
 }
 
 def prepareWorkspaceWithLibraryCache(def script) {

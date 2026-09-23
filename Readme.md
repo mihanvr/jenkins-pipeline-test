@@ -9,3 +9,24 @@
 | WEBHOOK_ENABLED        | true                  | Отправляють вебхук для CI/CD                                                      |
 | SETUP_PARAMETERS       | true                  | Установить параметры в настройках задачи                                          |
 | SETUP_PARAMETERS_ONLY  | false                 | Отменить сборку после установки параметров                                        |
+
+# Запоминание выбора в форме запуска
+
+`options.rememberedParameters` перечисляет параметры, чьё значение из последней сборки становится умолчанием
+в форме "Собрать с параметрами":
+
+```groovy
+options = [
+        // ...
+        rememberedParameters: ['REMOTE_ICONS'],
+]
+```
+
+В начале каждой сборки библиотека сравнивает значения этих параметров с умолчаниями задачи и записывает
+отличающиеся. Работает и при `SETUP_PARAMETERS=false`: тот управляет набором параметров, а запоминание меняет
+только умолчания уже заведённых. Подходит любой тип, который умеет `ParameterDefinition.copyWithDefaultValue`
+(boolean, string, text, choice); остальные остаются как были.
+
+Разовые действия (`CLEAR_WORKSPACE_BEFORE`, `RESTORE_LIBRARY_CACHE`, `SAVE_LIBRARY_CACHE`, `SETUP_PARAMETERS_ONLY`)
+в список не класть: одна сборка с галкой сделала бы её режимом для всех следующих. `SETUP_PARAMETERS` тоже:
+запомненное `false` перестанет заводить новые параметры.
