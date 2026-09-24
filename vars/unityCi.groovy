@@ -32,6 +32,7 @@ def defaultPipeline(def script) {
     checkNodeLabel(nodeLabel)
     node(nodeLabel) {
         env.BUILD_NODE_NAME = env.NODE_NAME
+        showNodeInBuildName()
         notify(script: script, buildStatus: "Started")
         this.options = options
         stage("Checkout") {
@@ -98,6 +99,15 @@ def defaultPipeline(def script) {
         stage("Create Library Cache") {
             createLibraryCacheIfEnabled(script)
         }
+    }
+}
+
+// Дописывает агент к имени сборки: "#19 miha-home". Stage View и список сборок на странице задачи
+// показывают именно имя, а своего поля с агентом у pipeline-сборки там нет. Имя, которое Jenkinsfile
+// задал сам, остаётся как было.
+def showNodeInBuildName() {
+    if (currentBuild.displayName == "#${env.BUILD_NUMBER}") {
+        currentBuild.displayName = "#${env.BUILD_NUMBER} ${env.NODE_NAME}"
     }
 }
 
