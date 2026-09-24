@@ -185,7 +185,9 @@ def getProjectUnityVersionAndRevision(String projectDir) {
         for (final def line in text.readLines()) {
             if (line.startsWith(expectedLineStart)) {
                 def (unityVersion, unityRevision) = line.substring(expectedLineStart.size()).split(' ')
-                return [unityVersion, unityRevision.substring(1, unityRevision.size() - 2)]
+                // Ревизия записана в скобках, "6000.6.1f1 (7efac9f6c10e)", а Hub ставит редактор только
+                // по полному changeset: снимаются ровно скобки.
+                return [unityVersion, unityRevision.replaceAll(/[()]/, '').trim()]
             }
         }
     }
