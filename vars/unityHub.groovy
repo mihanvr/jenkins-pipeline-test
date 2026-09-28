@@ -96,15 +96,15 @@ def getUnityPath(String editorVersion, String editorVersionRevision = '', boolea
 }
 
 // Каталог модуля внутри редактора: по нему видно, стоит ли модуль. На Windows unityPath указывает
-// на ...\Editor\Unity.exe, на macOS на .../<версия>/Unity.app.
-playbackEngineDirs = [
-        'android': 'AndroidPlayer',
-        'webgl'  : 'WebGLSupport',
-        'ios'    : 'iOSSupport',
-]
-
+// на ...\Editor\Unity.exe, на macOS на .../<версия>/Unity.app. Таблица внутри функции, а не
+// присваиванием в теле файла: Jenkins не выполняет верхнеуровневый код vars/*.groovy, и такая
+// переменная в шаге не существует (MissingPropertyException).
 def getPlaybackEnginePath(String unityPath, String module) {
-    def engine = playbackEngineDirs[module]
+    def engine = [
+            'android': 'AndroidPlayer',
+            'webgl'  : 'WebGLSupport',
+            'ios'    : 'iOSSupport',
+    ][module]
     if (!engine || !unityPath) return null
     if (unityPath.endsWith('.app')) {
         return unityPath.substring(0, unityPath.lastIndexOf('/')) + '/PlaybackEngines/' + engine
