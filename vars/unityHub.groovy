@@ -95,9 +95,38 @@ def getUnityPath(String editorVersion, String editorVersionRevision = '', boolea
     return editorVersionPath
 }
 
-def installUnityModules(String editorVersion, List<String> modules) {
+// Каталог модуля внутри редактора: по нему видно, стоит ли модуль. На Windows unityPath указывает
+// на ...\Editor\Unity.exe, на macOS на .../<версия>/Unity.app.
+playbackEngineDirs = [
+        'android': 'AndroidPlayer',
+        'webgl'  : 'WebGLSupport',
+        'ios'    : 'iOSSupport',
+]
+
+def getPlaybackEnginePath(String unityPath, String module) {
+    def engine = playbackEngineDirs[module]
+    if (!engine || !unityPath) return null
+    if (unityPath.endsWith('.app')) {
+        return unityPath.substring(0, unityPath.lastIndexOf('/')) + '/PlaybackEngines/' + engine
+    }
+    def editorDir = unityPath.substring(0, Math.max(unityPath.lastIndexOf('\\'), unityPath.lastIndexOf('/')))
+    return editorDir + '\\Data\\PlaybackEngines\\' + engine
+}
+
+// Код выхода Hub не показатель: на уже стоящем модуле он тоже бывает ненулевым, поэтому установка
+// проверяется по каталогу модуля. Без проверки недоустановленный модуль всплывал бы посреди сборки
+// невнятной ошибкой Unity, а не здесь с его именем. Модули без известного каталога не проверяются.
+def installUnityModules(String editorVersion, List<String> modules, String unityPath = null) {
     if (modules.size() == 0) return
-    exec label: 'Install required editor modules', returnStatus: true, script: "\"${UnityHubConfiguration.unityHubPath}\" -- --headless install-modules --version ${editorVersion} -m ${String.join(' ', modules)} --cm"
+    def status = exec label: 'Install required editor modules', returnStatus: true, script: "\"${UnityHubConfiguration.unityHubPath}\" -- --headless install-modules --version ${editorVersion} -m ${String.join(' ', modules)} --cm"
+    def missing = modules.findAll { module ->
+        def path = getPlaybackEnginePath(unityPath, module)
+        path && !fileExists(path)
+    }
+    if (missing) {
+        error("Модули редактора ${editorVersion} не установлены: ${missing.join(', ')} (unity hub install-modules вернул ${status}). " +
+                'На Windows Hub ставит в Program Files только из процесса с правами администратора.')
+    }
 }
 
 private def ensureUnityHubExecutableExists(String unityHubPath) {

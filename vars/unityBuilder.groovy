@@ -30,7 +30,7 @@ def build(def script) {
 
     unityHub.init(unityHubPath)
     def unityPath = unityHub.getUnityPath(unityVersion, unityRevision, true)
-    unityHub.installUnityModules(unityVersion, getRequiredUnityModules(buildTarget))
+    unityHub.installUnityModules(unityVersion, getRequiredUnityModules(buildTarget), unityPath)
     unity.init(unityPath)
 
     def buildOptions = [:]
@@ -86,12 +86,30 @@ def build(def script) {
     }
 
     additionalParameters += ' -ciOptionsFile ci_build_options.json'
+    additionalParameters += getCacheServerParameters(script)
     unity.execute(projectDir: projectDir, methodToExecute: 'JenkinsBuilder.Build', buildTarget: buildTarget, noGraphics: serverMode, additionalParameters: additionalParameters)
 
     env.OUTPUT_PATH = outputPath
     return [
             outputPath: outputPath
     ]
+}
+
+// Кэш импорта в Unity Accelerator. Адрес задаёт нода переменной окружения UNITY_CACHE_SERVER
+// (host:port; у каждой ноды свой, раз сервер виден им по разным сетям) или job через
+// options.cacheServer. Без адреса сборка идёт без кэша, как раньше. Пространство имён по умолчанию
+// это папка job'а (Gacha/WebGL-Master даёт Gacha): сборки проекта под разные платформы делят импорт,
+// а разные проекты не смешиваются.
+def getCacheServerParameters(def script) {
+    def endpoint = script.options?.cacheServer ?: script.env?.UNITY_CACHE_SERVER
+    if (!endpoint) return ''
+    def namespace = script.options?.cacheServerNamespace ?: (script.env?.JOB_NAME ?: 'unity').tokenize('/')[0]
+    namespace = namespace.replaceAll('[^A-Za-z0-9_.-]', '_')
+    log.info("Unity Accelerator: ${endpoint}, namespace ${namespace}")
+    // WaitForUploadCompletion: с -quit Unity иначе закрывается, не дослав импорт в кэш.
+    return " -EnableCacheServer -cacheServerEndpoint ${endpoint} -cacheServerNamespacePrefix ${namespace}" +
+            ' -cacheServerEnableDownload true -cacheServerEnableUpload true' +
+            ' -cacheServerWaitForConnection 5000 -cacheServerWaitForUploadCompletion'
 }
 
 def getRequiredUnityModules(String buildTarget) {
