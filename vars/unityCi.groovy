@@ -112,7 +112,7 @@ def showNodeInBuildName() {
 }
 
 // NODE_LABEL из формы запуска перекрывает options.nodeLabel: шаблон задаёт умолчание, а в форме выбирают
-// ноду на одну сборку. У каждой ноды есть метка с её именем, поэтому одно поле принимает и имя (WinBuild),
+// ноду на одну сборку. У каждой ноды есть метка с её именем, поэтому одно поле принимает и имя (7winds-miha-win),
 // и выражение меток (unity && win).
 def getNodeLabel(def script) {
     return env.NODE_LABEL?.trim() ?: script.options?.nodeLabel ?: "unity"
@@ -154,7 +154,7 @@ def checkParameters(def script) {
     }
 
     def actualParameters = [
-            string(name: 'NODE_LABEL', defaultValue: '', trim: true, description: 'Где собирать: имя ноды (WinBuild) или выражение меток (unity && win). Пусто: метка из настроек задачи, без неё unity'),
+            string(name: 'NODE_LABEL', defaultValue: '', trim: true, description: 'Где собирать: имя ноды (7winds-miha-win) или выражение меток (unity && win). Пусто: метка из настроек задачи, без неё unity'),
             booleanParam(name: 'WEBHOOK_ENABLED', defaultValue: true, description: 'Отправлять вебхук для CI/CD'),
             booleanParam(name: 'RESTORE_LIBRARY_CACHE', defaultValue: true, description: 'Восстанавливать кэш Library'),
             booleanParam(name: 'SAVE_LIBRARY_CACHE', defaultValue: true, description: 'Сохранять кэш Library'),
