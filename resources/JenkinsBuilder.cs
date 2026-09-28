@@ -11,6 +11,13 @@ public static class JenkinsBuilder
 {
     public const string BuildOptionsJsonFilePath = "ci_build_options.json";
 
+    // Unity даёт системе сборки Bee не больше шести перегенераций плана за одну сборку плеера. Холодная
+    // сборка WebGL с именами файлов по хэшу (каждый новый хэш выхода требует перегенерации) и Burst (второй
+    // круг после первой линковки) доходит до этого предела и падает этой ошибкой, хотя сделанная работа
+    // остаётся в Library/Bee и повтор в том же редакторе дособирает за один-два прогона.
+    private const string BeeRerunLimitMessage = "Backend has requested a buildprogram run";
+    private const int BeeRerunLimitRetries = 1;
+
     [MenuItem("Tools/Build CI")]
     public static void Build()
     {
@@ -80,7 +87,7 @@ public static class JenkinsBuilder
 
         TryRunMethod(options.preBuildMethod);
         LogBuildPlayerOptions(buildPlayerOptions);
-        var buildPlayer = BuildPipeline.BuildPlayer(buildPlayerOptions);
+        var buildPlayer = BuildPlayerRetryingBeeLimit(buildPlayerOptions);
         Debug.Log($"Build completed with result: {buildPlayer.summary.result}");
         if (buildPlayer.summary.result != BuildResult.Succeeded)
         {
@@ -93,6 +100,39 @@ public static class JenkinsBuilder
         else
         {
             TryRunMethod(options.postBuildMethod);
+        }
+    }
+
+    /// <summary>
+    /// Сборка плеера с повтором, если она упала на лимите перегенераций Bee. Любой другой отказ
+    /// возвращается как есть: повтор его не лечит и только удвоил бы время до красной сборки.
+    /// </summary>
+    private static BuildReport BuildPlayerRetryingBeeLimit(BuildPlayerOptions buildPlayerOptions)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            var hitLimit = false;
+            // Сообщение Bee уходит в лог через Debug.LogError, в BuildReport его текста может не быть.
+            void Watch(string condition, string stackTrace, LogType type)
+            {
+                if (type != LogType.Log && condition != null && condition.Contains(BeeRerunLimitMessage))
+                    hitLimit = true;
+            }
+
+            BuildReport report;
+            Application.logMessageReceived += Watch;
+            try
+            {
+                report = BuildPipeline.BuildPlayer(buildPlayerOptions);
+            }
+            finally
+            {
+                Application.logMessageReceived -= Watch;
+            }
+
+            if (report.summary.result == BuildResult.Succeeded || !hitLimit || attempt >= BeeRerunLimitRetries)
+                return report;
+            Debug.Log($"JenkinsBuilder: build hit the Bee buildprogram rerun limit, retry {attempt + 1} of {BeeRerunLimitRetries} in the same editor");
         }
     }
 
