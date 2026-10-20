@@ -1,0 +1,18 @@
+plugins {
+    id 'groovy'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation localGroovy()
+    testImplementation 'junit:junit:4.13.2'
+}
+
+test {
+    useJUnit()
+    // Pipeline-скрипты загружаются тестами с диска.
+    inputs.dir('vars')
+}

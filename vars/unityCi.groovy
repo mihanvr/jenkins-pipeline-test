@@ -497,6 +497,7 @@ def notify(def options) {
     discordNotify(options)
 }
 
+// Отправляет статус сборки и ссылки с размерами архивов в пределах Discord embed.
 def discordNotify(def params) {
     def script = params.script
     def notifyStages = script?.options?.notifyStages
@@ -557,12 +558,21 @@ def discordNotify(def params) {
     }
 
     def artifacts = getBuildArtifacts(script)
-    if (artifacts.size() > 0) {
-        def art0 = artifacts[0]
-        fields.add([name: "Download", value: "[${art0.name}](${art0.href})", inline: true])
-        if (art0.size) {
-            fields.add([name: "Build Size", value: "${toPrettySize(art0.size.toString().toInteger())}", inline: true])
+    def allArtifacts = "[All artifacts](${buildUrl}artifact/)"
+    int embedLength = fields.sum { it.name.length() + it.value.toString().length() }
+    for (int i = 0; i < artifacts.size(); i++) {
+        def artifact = artifacts[i]
+        def download = "[${artifact.name}](${artifact.href}) (${toPrettySize(artifact.size.toString().toLong())})"
+        // Оставляем место для ссылки на полный список, если следующие архивы не поместятся.
+        boolean hasMore = i < artifacts.size() - 1
+        int reservedLength = hasMore ? "Download".length() + allArtifacts.length() : 0
+        if (download.length() > 1024 || fields.size() >= (hasMore ? 24 : 25) ||
+                embedLength + "Download".length() + download.length() + reservedLength > 6000) {
+            fields.add([name: "Download", value: allArtifacts, inline: true])
+            break
         }
+        fields.add([name: "Download", value: download, inline: true])
+        embedLength += "Download".length() + download.length()
     }
 
     def json = writeJSON(json: discordContent, returnText: true)
@@ -579,15 +589,16 @@ def discordNotify(def params) {
 
 }
 
+// Форматирует байтовый размер архива без ограничения диапазоном int.
 def toPrettySize(def sizeInBytes) {
     def KB = 1024
     def MB = 1024 * KB
 
-    def wholeMb = (int) (sizeInBytes / MB)
+    def wholeMb = sizeInBytes.toLong().intdiv(MB)
     if (wholeMb > 0) {
         return "${wholeMb} MB"
     }
-    def wholeKb = (int) (sizeInBytes / KB)
+    def wholeKb = sizeInBytes.toLong().intdiv(KB)
     if (wholeKb > 0) {
         return "${wholeKb} KB"
     }
