@@ -1,3 +1,15 @@
+# Проверка уведомлений Discord
+
+Для локальных regression-тестов нужен установленный Gradle 9 с совместимой JDK:
+
+```powershell
+gradle test --tests DiscordNotifyTest
+```
+
+Полный набор: `gradle test`. Тесты вызывают `discordNotify` из `vars/unityCi.groovy` и проверяют JSON на границе HTTP, без отправки сообщений. Зависимость JUnit загружается из Maven Central при первом запуске.
+
+В уведомлении каждый архив получает ссылку и размер файла из Jenkins. При превышении ограничений Discord оставшиеся архивы доступны по ссылке "All artifacts".
+
 # Environment variables
 
 | Название               | Значение по умолчанию | Описание                                                                          |
