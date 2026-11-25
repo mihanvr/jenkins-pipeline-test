@@ -1,8 +1,8 @@
+// Готовит редактор и модули на выбранной ноде перед запуском JenkinsBuilder.
 def build(def script) {
     def options = script.options
     def env = script?.env
     def autoDetectUnityVersion = (options.autoDetectUnityVersion ?: env?.AUTO_DETECT_UNITY_VERSION ?: true).toBoolean()
-    def unityHubPath = getUnityHubPath(script)
     def projectDir = options.projectDir ?: env?.PROJECT_DIR ?: '.'
     def scenes = options.scenes
     def buildTarget = options.buildTarget ?: env?.BUILD_TARGET
@@ -28,9 +28,16 @@ def build(def script) {
         unityRevision = options.unityRevision ?: env?.UNITY_REVISION
     }
 
-    unityHub.init(unityHubPath)
-    def unityPath = unityHub.getUnityPath(unityVersion, unityRevision, true)
-    unityHub.installUnityModules(unityVersion, getRequiredUnityModules(buildTarget), unityPath)
+    def modules = getRequiredUnityModules(buildTarget)
+    def unityCliPath = unityCli.findExecutable(options, env)
+    def unityPath
+    if (unityCliPath) {
+        unityPath = unityCli.prepareEditor(unityCliPath, unityVersion, unityRevision, modules)
+    } else {
+        unityHub.init(getUnityHubPath(script))
+        unityPath = unityHub.getUnityPath(unityVersion, unityRevision, true)
+        unityHub.installUnityModules(unityVersion, modules, unityPath)
+    }
     unity.init(unityPath)
 
     def buildOptions = [:]

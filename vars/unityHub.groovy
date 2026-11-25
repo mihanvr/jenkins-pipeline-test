@@ -36,9 +36,10 @@ def init(String unityHubPath) {
     UnityHubConfiguration.unityHubPath = getExePath(unityHubPath)
 }
 
+// Разбирает вывод Hub на Windows и Unix без символа CR в пути редактора.
 def getAvailableEditors() {
     def v = exec label: 'Get available unity editors', returnStdout: true, script: "\"${UnityHubConfiguration.unityHubPath}\" -- --headless editors -i"
-    return v.split('\n')
+    return v.split(/\r?\n/)
 }
 
 def getExePath(String unityHubPath) {
@@ -95,22 +96,27 @@ def getUnityPath(String editorVersion, String editorVersionRevision = '', boolea
     return editorVersionPath
 }
 
-// Каталог модуля внутри редактора: по нему видно, стоит ли модуль. На Windows unityPath указывает
-// на ...\Editor\Unity.exe, на macOS на .../<версия>/Unity.app. Таблица внутри функции, а не
-// присваиванием в теле файла: Jenkins не выполняет верхнеуровневый код vars/*.groovy, и такая
-// переменная в шаге не существует (MissingPropertyException).
+// Сопоставляет общие идентификаторы Hub и CLI с каталогами модулей редактора.
 def getPlaybackEnginePath(String unityPath, String module) {
     def engine = [
             'android': 'AndroidPlayer',
             'webgl'  : 'WebGLSupport',
             'ios'    : 'iOSSupport',
     ][module]
-    if (!engine || !unityPath) return null
+    return engine ? getPlaybackEngineDirectory(unityPath, engine) : null
+}
+
+// На macOS PlaybackEngines лежит рядом с Unity.app, на Windows и Linux в Data редактора.
+String getPlaybackEngineDirectory(String unityPath, String engine) {
+    if (!unityPath) return null
+    def lastSeparator = Math.max(unityPath.lastIndexOf('\\'), unityPath.lastIndexOf('/'))
+    if (lastSeparator < 0) return null
+    def editorDir = unityPath.substring(0, lastSeparator)
     if (unityPath.endsWith('.app')) {
-        return unityPath.substring(0, unityPath.lastIndexOf('/')) + '/PlaybackEngines/' + engine
+        return "${editorDir}/PlaybackEngines/${engine}"
     }
-    def editorDir = unityPath.substring(0, Math.max(unityPath.lastIndexOf('\\'), unityPath.lastIndexOf('/')))
-    return editorDir + '\\Data\\PlaybackEngines\\' + engine
+    def separator = unityPath.substring(lastSeparator, lastSeparator + 1)
+    return [editorDir, 'Data', 'PlaybackEngines', engine].join(separator)
 }
 
 // Код выхода Hub не показатель: на уже стоящем модуле он тоже бывает ненулевым, поэтому установка
