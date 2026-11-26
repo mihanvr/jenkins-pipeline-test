@@ -3,6 +3,8 @@ import groovy.json.JsonSlurper
 import org.junit.Before
 import org.junit.Test
 
+import javax.net.ssl.SSLHandshakeException
+
 import static org.junit.Assert.*
 
 // Проверяет JSON уведомления через настоящий шаг общей библиотеки.
@@ -46,6 +48,7 @@ class DiscordNotifyTest {
         assertEquals(1, requests.size())
         assertEquals('POST', requests[0].httpMode)
         assertEquals('APPLICATION_JSON', requests[0].contentType)
+        assertEquals('200:299', requests[0].validResponseCodes)
         assertEquals('https://discord.invalid/webhook', requests[0].url)
         return new JsonSlurper().parseText(requests[0].requestBody as String) as Map
     }
@@ -130,6 +133,78 @@ class DiscordNotifyTest {
             unityCi.discordNotify(script: script, buildStatus: 'Success')
         }
         assertTrue(requests.isEmpty())
+    }
+
+    // Ошибка отправки до выделения ноды и после сборки не меняет её результат.
+    @Test
+    void 'Discord TLS failures do not stop the Android pipeline'() {
+        def script = job('Android', [])
+        script.options.notifyStages = ['Queued', 'Started', 'Success']
+        def statuses = []
+        def warnings = []
+        boolean built = false
+        unityCi.binding.setVariable('log', [warn: { String message -> warnings.add(message) }])
+        unityCi.binding.setVariable('httpRequest', { Map args ->
+            statuses.add(new JsonSlurper().parseText(args.requestBody as String).embeds[0].fields[0].name)
+            throw new SSLHandshakeException('Remote host terminated the handshake')
+        })
+        unityCi.metaClass.defaultPipeline = { Map job ->
+            unityCi.notify(script: job, buildStatus: 'Started')
+            built = true
+        }
+
+        unityCi.call(script)
+
+        assertTrue(built)
+        assertEquals('SUCCESS', script.currentBuild.result)
+        assertEquals(['Build Queued', 'Build Started', 'Build Success'], statuses)
+        assertEquals(3, warnings.size())
+        assertTrue(warnings.every { it.contains('SSLHandshakeException') })
+    }
+
+    // Отмена Jenkins во время HTTP-запроса должна выйти из пайплайна.
+    @Test
+    void 'interrupting a Discord notification still aborts the pipeline'() {
+        def script = job('Android', [])
+        script.options.notifyStages = ['Queued']
+        def cancellation = new InterruptedException('Build aborted')
+        unityCi.binding.setVariable('currentBuild', script.currentBuild)
+        unityCi.binding.setVariable('httpRequest', { Map args -> throw cancellation })
+        unityCi.metaClass.defaultPipeline = { Map ignored -> fail('The canceled build must not start') }
+
+        try {
+            unityCi.call(script)
+            fail('The Jenkins cancellation must propagate')
+        } catch (InterruptedException failure) {
+            assertSame(cancellation, failure)
+        }
+        assertEquals('ABORTED', script.currentBuild.result)
+    }
+
+    // Отказ Discord при отправке Failed сохраняет исходное исключение сборки.
+    @Test
+    void 'a failed notification keeps the original Android build failure'() {
+        def script = job('Android', [])
+        script.options.notifyStages = ['Failed']
+        def buildFailure = new IllegalStateException('Unity build failed')
+        def warnings = []
+        unityCi.binding.setVariable('currentBuild', script.currentBuild)
+        unityCi.binding.setVariable('env', script.env)
+        unityCi.binding.setVariable('log', [warn: { String message -> warnings.add(message) }])
+        unityCi.binding.setVariable('httpRequest', { Map args ->
+            throw new IOException('Discord request failed')
+        })
+        unityCi.metaClass.defaultPipeline = { Map ignored -> throw buildFailure }
+
+        try {
+            unityCi.call(script)
+            fail('The Android build failure must propagate')
+        } catch (IllegalStateException failure) {
+            assertSame(buildFailure, failure)
+        }
+        assertEquals('FAILURE', script.currentBuild.result)
+        assertEquals(1, warnings.size())
+        assertTrue(warnings[0].contains('Failed'))
     }
 
     // Общий размер остаётся десятичной строкой байтов для стороннего webhook.

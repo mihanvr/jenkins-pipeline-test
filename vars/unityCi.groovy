@@ -497,7 +497,7 @@ def notify(def options) {
     discordNotify(options)
 }
 
-// Отправляет статус сборки и ссылки с размерами архивов в пределах Discord embed.
+// Отправляет статус сборки и ссылки на архивы. Ошибка доставки остаётся предупреждением.
 def discordNotify(def params) {
     def script = params.script
     def notifyStages = script?.options?.notifyStages
@@ -578,13 +578,12 @@ def discordNotify(def params) {
     def json = writeJSON(json: discordContent, returnText: true)
     echo json
     try {
-        httpRequest contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json, url: webhookUrl, validResponseCodes: '100:599', quiet: false
+        httpRequest contentType: 'APPLICATION_JSON', httpMode: 'POST', requestBody: json,
+                url: webhookUrl, validResponseCodes: '200:299', quiet: true
+    } catch (InterruptedException e) {
+        throw e
     } catch (Exception e) {
-        if (e.message?.contains("timed out")) {
-            log.error(e.message)
-        } else {
-            throw e
-        }
+        log.warn("Discord notification (${buildStatus}) failed: ${e.class.simpleName}")
     }
 
 }
